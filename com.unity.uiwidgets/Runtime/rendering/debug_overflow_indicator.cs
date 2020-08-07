@@ -244,8 +244,8 @@ namespace UIWidgets.Runtime.rendering {
             List<_OverflowRegionData> overflowRegions = _calculateOverflowRegions(overflow, containerRect);
             foreach (_OverflowRegionData region in overflowRegions) {
                 context.canvas.drawRect(region.rect.shift(offset), _indicatorPaint);
-
-                if (_indicatorLabel[(int) region.side].text?.text != region.label) {
+                TextSpan textSpan = _indicatorLabel[(int)region.side].text as TextSpan;
+                if (textSpan?.text != region.label) {                   
                     _indicatorLabel[(int) region.side].text = new TextSpan(
                         text: region.label,
                         style: _indicatorTextStyle

@@ -97,7 +97,7 @@ namespace UIWidgets.Tests {
         RenderBox text() {
             return this.box(
                 new RenderParagraph(new TextSpan("", children:
-                    new List<TextSpan>() {
+                    new List<InlineSpan>() {
                         new TextSpan("Real-time 3D revolutioni淡粉色的方式地方zes the animation pipeline ", null),
                         new TextSpan(style: new TextStyle(color: Color.fromARGB(255, 255, 0, 0)),
                             text: "for Disney Television Animation's “Baymax Dreams"),
@@ -140,7 +140,7 @@ namespace UIWidgets.Tests {
         RenderBox textDecoration() {
             return this.box(
                 new RenderParagraph(new TextSpan(style: new TextStyle(height: 1.2f), text: "", children:
-                    new List<TextSpan>() {
+                    new List<InlineSpan>() {
                         new TextSpan(style: new TextStyle(color: Color.fromARGB(255, 255, 0, 0),
                                 decoration: TextDecoration.underline),
                             text: "Real-time 3D revolution\n"),
@@ -210,7 +210,7 @@ namespace UIWidgets.Tests {
         RenderBox textOverflow() {
             return this.box(
                 new RenderParagraph(new TextSpan("", children:
-                    new List<TextSpan>() {
+                    new List<InlineSpan>() {
                         new TextSpan(
                             "Real-time 3D revolutionizes:\n the animation pipeline.\n\n\nrevolutionizesn\n\nReal-time 3D revolutionizes the animation pipeline ",
                             null),
@@ -222,7 +222,7 @@ namespace UIWidgets.Tests {
                 "Hello UIWidgets. Real-time 3D revolutionize \nReal-time 3D revolutionize\nReal-time 3D revolutionize\n\n";
             return this.box(
                 new RenderParagraph(new TextSpan(text: "", children:
-                    new List<TextSpan>() {
+                    new List<InlineSpan>() {
                         new TextSpan(style: new TextStyle(height: 1),
                             text: "Height 1.0 Text:" + text),
                         new TextSpan(style: new TextStyle(height: 1.2f),

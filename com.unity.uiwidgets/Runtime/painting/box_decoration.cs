@@ -22,7 +22,7 @@ namespace Unity.UIWidgets.painting {
             D.assert(
                 backgroundBlendMode == null || color != null || gradient != null,
                 () => "backgroundBlendMode applies to BoxDecoration\'s background color or " +
-                "gradient, but no color or gradient was provided."
+                      "gradient, but no color or gradient was provided."
             );
 
             this.color = color;
@@ -33,6 +33,28 @@ namespace Unity.UIWidgets.painting {
             this.gradient = gradient;
             this.backgroundBlendMode = backgroundBlendMode;
             this.shape = shape;
+        }
+
+        public BoxDecoration copyWith(
+            Color color,
+            DecorationImage image,
+            Border border,
+            BorderRadius borderRadius,
+            List<BoxShadow> boxShadow,
+            Gradient gradient,
+            BlendMode? backgroundBlendMode,
+            BoxShape? shape
+        ) {
+            return new BoxDecoration(
+                color: color ?? this.color,
+                image: image ?? this.image,
+                border: border ?? this.border,
+                borderRadius: borderRadius ?? this.borderRadius,
+                boxShadow: boxShadow ?? this.boxShadow,
+                gradient: gradient ?? this.gradient,
+                backgroundBlendMode: backgroundBlendMode ?? this.backgroundBlendMode,
+                shape: shape ?? this.shape
+            );
         }
 
         public override bool debugAssertIsValid() {
@@ -53,6 +75,24 @@ namespace Unity.UIWidgets.painting {
             get { return this.border?.dimensions; }
         }
 
+        public override Path getClipPath(Rect rect, TextDirection textDirection) {
+            Path clipPath = null;
+            switch (this.shape) {
+                case BoxShape.circle:
+                    clipPath = new Path();
+                    clipPath.addOval(rect);
+                    break;
+                case BoxShape.rectangle:
+                    if (this.borderRadius != null) {
+                        clipPath = new Path();
+                        clipPath.addRRect(this.borderRadius.resolve(textDirection).toRRect(rect));
+                    }
+
+                    break;
+            }
+            return clipPath;
+        }
+        
         public BoxDecoration scale(float factor) {
             return new BoxDecoration(
                 color: Color.lerp(null, this.color, factor),
@@ -255,7 +295,7 @@ namespace Unity.UIWidgets.painting {
                 }
 
                 if (this._decoration.gradient != null) {
-                    paint.shader = this._decoration.gradient.createShader(rect);
+                    paint.shader = this._decoration.gradient.createShader(rect, TextDirection.ltr);
                     this._rectForCachedBackgroundPaint = rect;
                 }
 

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using Unity.UIWidgets.foundation;
 
 namespace Unity.UIWidgets.ui {
     public class ParagraphBuilder {
@@ -8,6 +9,18 @@ namespace Unity.UIWidgets.ui {
         StyledRuns _runs = new StyledRuns();
         List<int> _styleStack = new List<int>();
         int _paragraph_style_index;
+
+        int _placeholderCount;
+
+        public int placeholderCount {
+            get { return this._placeholderCount; }
+        }
+        
+        public List<float> placeholderScales {
+            get { return this._placeholderScales; }
+        }
+
+        List<float> _placeholderScales = new List<float>();
 
         public ParagraphBuilder(ParagraphStyle style) {
             this.setParagraphStyle(style);
@@ -47,6 +60,32 @@ namespace Unity.UIWidgets.ui {
         public void addText(string text) {
             this._text.Append(text);
         }
+
+        public void addPlaceholder(
+            float width,
+            float height,
+            PlaceholderAlignment alignment,
+            float? baselineOffset,
+            TextBaseline baseline,
+            float? scale = 1.0f
+        ) {
+            D.assert((alignment == PlaceholderAlignment.aboveBaseline ||
+                      alignment == PlaceholderAlignment.belowBaseline ||
+                      alignment == PlaceholderAlignment.baseline)
+                ? baseline != null
+                : true);
+            baselineOffset = baselineOffset ?? height;
+            this._addPlaceholder(width * scale, height * scale, (int) alignment,
+                (baselineOffset == null ? height : baselineOffset) * scale, (int) baseline);
+            this._placeholderCount++;
+            this._placeholderScales.Add(scale ?? 0);
+        }
+
+        string _addPlaceholder(float? width, float? height, int alignment, float? baselineOffset, int baseline) {
+            // TODO native 'ParagraphBuilder_addPlaceholder';
+            return "";
+        }
+
 
         internal TextStyle peekStyle() {
             return this._runs.getStyle(this.peekStyleIndex());

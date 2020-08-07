@@ -207,7 +207,7 @@ namespace UIWidgetsGallery.gallery {
                         child: new RichText(
                             text: new TextSpan(
                                 style: new TextStyle(fontFamily: "monospace", fontSize: 10.0f),
-                                children: new List<TextSpan> {
+                                children: new List<InlineSpan> {
                                     new DartSyntaxHighlighter(style).format(this._exampleCode)
                                 }
                             )

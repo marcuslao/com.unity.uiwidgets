@@ -530,6 +530,7 @@ namespace Unity.UIWidgets.rendering {
         public object debugCreator;
 
         void _debugReportException(string method, Exception exception) {
+            Debug.Log(exception.StackTrace);
             UIWidgetsError.reportError(new UIWidgetsErrorDetailsForRendering(
                 exception: exception,
                 library: "rendering library",

@@ -25,6 +25,7 @@ namespace Unity.UIWidgets.painting {
         public readonly Paint background;
         public readonly string fontFamily;
         public readonly List<BoxShadow> shadows;
+        public readonly List<ui.FontFeature> fontFeatures;
 
         public List<string> fontFamilyFallback {
             get { return this._fontFamilyFallback; }
@@ -60,6 +61,7 @@ namespace Unity.UIWidgets.painting {
             string fontFamily = null,
             List<string> fontFamilyFallback = null,
             List<BoxShadow> shadows = null,
+            List<ui.FontFeature> fontFeatures = null,
             string debugLabel = null) {
             D.assert(color == null || foreground == null, () => _kColorForegroundWarning);
             D.assert(backgroundColor == null || background == null, () => _kColorBackgroundWarning);
@@ -83,6 +85,7 @@ namespace Unity.UIWidgets.painting {
             this.foreground = foreground;
             this.background = background;
             this.shadows = shadows;
+            this.fontFeatures = fontFeatures;
         }
 
         public RenderComparison compareTo(TextStyle other) {
@@ -91,7 +94,7 @@ namespace Unity.UIWidgets.painting {
                 this.fontStyle != other.fontStyle || this.letterSpacing != other.letterSpacing ||
                 this.wordSpacing != other.wordSpacing || this.textBaseline != other.textBaseline ||
                 this.height != other.height || this.background != other.background ||
-                this.shadows.equalsList(other.shadows)) {
+                this.shadows.equalsList(other.shadows) || this.fontFeatures.equalsList(other.fontFeatures)) {
                 return RenderComparison.layout;
             }
 
@@ -104,12 +107,24 @@ namespace Unity.UIWidgets.painting {
             return RenderComparison.identical;
         }
 
-        public ParagraphStyle getParagraphStyle(TextAlign textAlign,
-            TextDirection textDirection, string ellipsis, int? maxLines, float textScaleFactor = 1.0f) {
+        public ParagraphStyle getParagraphStyle(
+            TextAlign textAlign,
+            TextDirection textDirection,
+            string ellipsis,
+            int? maxLines,
+            ui.TextHeightBehavior textHeightBehavior = null,
+            float textScaleFactor = 1.0f) {
             return new ParagraphStyle(
-                textAlign, textDirection, this.fontWeight, this.fontStyle,
-                maxLines, (this.fontSize ?? _defaultFontSize) * textScaleFactor, this.fontFamily, this.height,
-                ellipsis
+                textAlign,
+                textDirection,
+                this.fontWeight,
+                this.fontStyle,
+                maxLines,
+                (this.fontSize ?? _defaultFontSize) * textScaleFactor,
+                this.fontFamily,
+                this.height,
+                textHeightBehavior: textHeightBehavior,
+                ellipsis: ellipsis
             );
         }
 
@@ -176,6 +191,7 @@ namespace Unity.UIWidgets.painting {
                     ? null
                     : this.decorationThickness * decorationThicknessFactor + decorationThicknessDelta,
                 shadows: shadows ?? this.shadows,
+                fontFeatures: this.fontFeatures,
                 debugLabel: modifiedDebugLabel
             );
         }
@@ -218,6 +234,7 @@ namespace Unity.UIWidgets.painting {
                 decorationStyle: other.decorationStyle,
                 decorationThickness: other.decorationThickness,
                 shadows: other.shadows,
+                fontFeatures: other.fontFeatures,
                 debugLabel: mergedDebugLabel
             );
         }
@@ -242,6 +259,7 @@ namespace Unity.UIWidgets.painting {
             TextDecorationStyle? decorationStyle = null,
             float? decorationThickness = null,
             List<BoxShadow> shadows = null,
+            List<ui.FontFeature> fontFeatures = null,
             string debugLabel = null) {
             D.assert(color == null || foreground == null, () => _kColorForegroundWarning);
             D.assert(backgroundColor == null || background == null, () => _kColorBackgroundWarning);
@@ -274,6 +292,7 @@ namespace Unity.UIWidgets.painting {
                 foreground: foreground ?? this.foreground,
                 background: background ?? this.background,
                 shadows: shadows ?? this.shadows,
+                fontFeatures: fontFeatures ?? this.fontFeatures,
                 debugLabel: newDebugLabel
             );
         }
@@ -312,6 +331,7 @@ namespace Unity.UIWidgets.painting {
                     decorationStyle: t < 0.5f ? null : b.decorationStyle,
                     decorationThickness: t < 0.5f ? null : b.decorationThickness,
                     shadows: t < 0.5f ? null : b.shadows,
+                    fontFeatures: t < 0.5 ? null : b.fontFeatures,
                     debugLabel: lerpDebugLabel
                 );
             }
@@ -337,6 +357,7 @@ namespace Unity.UIWidgets.painting {
                     decorationStyle: t < 0.5f ? a.decorationStyle : null,
                     decorationThickness: t < 0.5f ? a.decorationThickness : null,
                     shadows: t < 0.5f ? a.shadows : null,
+                    fontFeatures: t < 0.5 ? a.fontFeatures : null,
                     debugLabel: lerpDebugLabel
                 );
             }
@@ -375,7 +396,35 @@ namespace Unity.UIWidgets.painting {
                     a.decorationThickness ?? b.decorationThickness ?? 0.0f,
                     b.decorationThickness ?? a.decorationThickness ?? 0.0f, t),
                 shadows: t < 0.5f ? a.shadows : b.shadows,
+                fontFeatures: t < 0.5 ? a.fontFeatures : b.fontFeatures,
                 debugLabel: lerpDebugLabel
+            );
+        }
+
+        internal ui.TextStyle getTextStyle(float textScaleFactor = 1.0f) {
+            return new ui.TextStyle(
+                color: this.color,
+                decoration: this.decoration,
+                decorationColor: this.decorationColor,
+                decorationStyle: this.decorationStyle,
+                decorationThickness: this.decorationThickness,
+                fontWeight: this.fontWeight,
+                fontStyle: this.fontStyle,
+                textBaseline: this.textBaseline,
+                fontFamily: this.fontFamily,
+                fontFamilyFallback: this.fontFamilyFallback,
+                fontSize: this.fontSize == null ? null : this.fontSize * textScaleFactor,
+                letterSpacing: this.letterSpacing,
+                wordSpacing: this.wordSpacing,
+                height: this.height,
+                // locale: locale,
+                foreground: this.foreground,
+                background: this.background ?? (this.backgroundColor != null
+                    ? (new Paint() {color = this.backgroundColor})
+                    : null
+                ),
+                shadows: this.shadows,
+                fontFeatures: this.fontFeatures
             );
         }
 
@@ -483,6 +532,7 @@ namespace Unity.UIWidgets.painting {
                    Equals(this.background, other.background) &&
                    this.fontFamilyFallback.equalsList(other.fontFamilyFallback) &&
                    this.shadows.equalsList(other.shadows) &&
+                   this.fontFeatures.equalsList(other.fontFeatures) &&
                    string.Equals(this.fontFamily, other.fontFamily);
         }
 
@@ -524,6 +574,7 @@ namespace Unity.UIWidgets.painting {
                 hashCode = (hashCode * 397) ^
                            (this.fontFamilyFallback != null ? this.fontFamilyFallback.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (this.shadows != null ? this.shadows.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (this.fontFeatures != null ? this.fontFeatures.GetHashCode() : 0);
                 return hashCode;
             }
         }

@@ -515,7 +515,7 @@ namespace Unity.UIWidgets.rendering {
         TextPainter _textPainter;
 
         public TextSpan text {
-            get { return this._textPainter.text; }
+            get { return this._textPainter.text as TextSpan; }
             set {
                 if (this._textPainter.text == value) {
                     return;
@@ -1117,7 +1117,7 @@ namespace Unity.UIWidgets.rendering {
             }
 
             if (!width.isFinite()) {
-                var text = this._textPainter.text.text;
+                var text = this._textPainter.text.toPlainText();
                 int lines = 1;
                 for (int index = 0; index < text.Length; ++index) {
                     if (text[index] == 0x0A) {

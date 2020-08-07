@@ -201,6 +201,8 @@ namespace Unity.UIWidgets.painting {
             return !Equals(a, b);
         }
 
+        public BorderRadius resolve(TextDirection direction) => this;
+        
         public override string ToString() {
             string visual = null;
             if (this.topLeft == this.topRight &&

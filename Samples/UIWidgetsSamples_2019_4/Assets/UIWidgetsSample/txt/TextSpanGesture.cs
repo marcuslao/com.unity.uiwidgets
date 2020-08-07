@@ -45,7 +45,7 @@ namespace UIWidgetsSample {
                 text: new TextSpan(
                     text: "Can you ",
                     style: new TextStyle(color: Colors.black),
-                    children: new List<TextSpan>() {
+                    children: new List<InlineSpan>() {
                         new TextSpan(
                             text: "find the",
                             style: new TextStyle(

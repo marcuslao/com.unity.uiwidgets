@@ -7,6 +7,10 @@ namespace Unity.UIWidgets.ui {
     public class Matrix4 : IEquatable<Matrix4> {
         internal readonly float[] _m4storage;
 
+        public float[] storage {
+            get { return this._m4storage; }
+        }
+
         int dimension {
             get { return 4; }
         }
@@ -112,7 +116,7 @@ namespace Unity.UIWidgets.ui {
             this.setFromTranslationRotation(translation, rotation);
             this.scale(scale);
         }
-        
+
         void setFromTranslationRotation(Vector3 arg0, Quaternion arg1) {
             float x = arg1[0];
             float y = arg1[1];
@@ -148,7 +152,7 @@ namespace Unity.UIWidgets.ui {
             this._m4storage[14] = arg0[2];
             this._m4storage[15] = 1.0f;
         }
-        
+
         void setFrom(Matrix4 arg) {
             this._m4storage[15] = arg[15];
             this._m4storage[14] = arg[14];
@@ -427,7 +431,7 @@ namespace Unity.UIWidgets.ui {
             this.setRotationZ(radians);
             return this;
         }
-        
+
         public Matrix4 rotationZ(float radians, float px, float py) {
             this._m4storage[15] = 1.0f;
             this.setRotationZ(radians, px, py);
@@ -460,7 +464,7 @@ namespace Unity.UIWidgets.ui {
             this._m4storage[14] *= sw;
             this._m4storage[15] *= sw;
         }
-        
+
         public void scale(Vector3 s) {
             float sx = s.x;
             float sy = s.y;
@@ -709,7 +713,7 @@ namespace Unity.UIWidgets.ui {
             this._m4storage[7] = 0;
             this._m4storage[11] = 0;
         }
-        
+
         void setRotationZ(float radians, float px, float py) {
             float c = Mathf.Cos(radians);
             float s = Mathf.Sin(radians);

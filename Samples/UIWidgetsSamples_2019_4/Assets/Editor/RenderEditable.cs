@@ -132,7 +132,7 @@ namespace UIWidgets.Tests {
 
         RenderBox textEditable() {
             var span = new TextSpan("", children:
-                new List<TextSpan> {
+                new List<InlineSpan> {
                     new TextSpan(
                         "Word Wrap:The ascent of the font is the distance from the baseline to the top line of the font, as defined in the font's original data file.",
                         null),
@@ -153,7 +153,7 @@ namespace UIWidgets.Tests {
             ));
 
             span = new TextSpan("", children:
-                new List<TextSpan> {
+                new List<InlineSpan> {
                     new TextSpan(
                         "Hard Break:The ascent of the font is the distance\nfrom the baseline to the top \nline of the font,\nas defined in",
                         null),
@@ -168,7 +168,7 @@ namespace UIWidgets.Tests {
             ));
 
             span = new TextSpan("", children:
-                new List<TextSpan> {
+                new List<InlineSpan> {
                     new TextSpan("Single Line:How to create mixin", null),
                 }, style: new TextStyle(height: 1.0f));
             flexbox.add(this.flexItemBox(

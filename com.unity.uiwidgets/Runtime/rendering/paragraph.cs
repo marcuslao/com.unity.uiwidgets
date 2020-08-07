@@ -84,7 +84,7 @@ namespace Unity.UIWidgets.rendering {
             }
         }
 
-        public TextSpan text {
+        public InlineSpan text {
             get { return this._textPainter.text; }
 
             set {
@@ -385,7 +385,7 @@ namespace Unity.UIWidgets.rendering {
             this._layoutTextWithConstraints(this.constraints);
             Offset offset = this.globalToLocal(evt.position);
             TextPosition position = this._textPainter.getPositionForOffset(offset);
-            TextSpan span = this._textPainter.text.getSpanForPosition(position);
+            TextSpan span = this._textPainter.text.getSpanForPosition(position) as TextSpan;
 
             if (this._previousHoverSpan != span) {
                 this._previousHoverSpan?.hoverRecognizer?.OnPointerLeave?.Invoke();
@@ -403,7 +403,7 @@ namespace Unity.UIWidgets.rendering {
             this._layoutTextWithConstraints(this.constraints);
             Offset offset = ((BoxHitTestEntry) entry).localPosition;
             TextPosition position = this._textPainter.getPositionForOffset(offset);
-            TextSpan span = this._textPainter.text.getSpanForPosition(position);
+            TextSpan span = this._textPainter.text.getSpanForPosition(position) as TextSpan;
             span?.recognizer?.addPointer((PointerDownEvent) evt);
         }
 

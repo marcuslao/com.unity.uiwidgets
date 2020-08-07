@@ -1,4 +1,5 @@
-﻿﻿using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Unity.UIWidgets.foundation;
 using Unity.UIWidgets.service;
 using Unity.UIWidgets.ui;
@@ -7,6 +8,36 @@ using Canvas = Unity.UIWidgets.ui.Canvas;
 using Rect = Unity.UIWidgets.ui.Rect;
 
 namespace Unity.UIWidgets.painting {
+    public class PlaceholderDimensions {
+        public PlaceholderDimensions(
+            Size size,
+            PlaceholderAlignment alignment,
+            TextBaseline baseline,
+            float baselineOffset
+        ) {
+            D.assert(size != null);
+            D.assert(alignment != null);
+            this.size = size;
+            this.alignment = alignment;
+            this.baseline = baseline;
+            this.baselineOffset = baselineOffset;
+        }
+
+        public Size size;
+        public ui.PlaceholderAlignment alignment;
+        public float baselineOffset;
+        public TextBaseline baseline;
+
+        public override string ToString() {
+            return $"PlaceholderDimensions({this.size}, {this.baseline})";
+        }
+    }
+
+    public enum TextWidthBasis {
+        parent,
+        longestLine
+    }
+
     class _CaretMetrics {
         public _CaretMetrics(Offset offset, float? fullHeight) {
             this.offset = offset;
@@ -18,7 +49,7 @@ namespace Unity.UIWidgets.painting {
     }
 
     public class TextPainter {
-        TextSpan _text;
+        InlineSpan _text;
         TextAlign _textAlign;
         TextDirection? _textDirection;
         float _textScaleFactor;
@@ -36,7 +67,11 @@ namespace Unity.UIWidgets.painting {
             float textScaleFactor = 1.0f,
             int? maxLines = null,
             string ellipsis = "",
-            StrutStyle strutStyle = null) {
+            StrutStyle strutStyle = null,
+            TextWidthBasis textWidthBasis = TextWidthBasis.parent,
+            ui.TextHeightBehavior textHeightBehavior = null) {
+            D.assert(text == null || text.debugAssertIsValid());
+            D.assert(maxLines == null || maxLines > 0);
             this._text = text;
             this._textAlign = textAlign;
             this._textDirection = textDirection;
@@ -44,6 +79,15 @@ namespace Unity.UIWidgets.painting {
             this._maxLines = maxLines;
             this._ellipsis = ellipsis;
             this._strutStyle = strutStyle;
+            this._textWidthBasis = textWidthBasis;
+            this._textHeightBehavior = textHeightBehavior;
+        }
+
+        void markNeedsLayout() {
+            Paragraph.release(ref this._paragraph);
+            this._needsLayout = true;
+            this._previousCaretPosition = null;
+            this._previousCaretPrototype = null;
         }
 
         public float textScaleFactor {
@@ -55,8 +99,7 @@ namespace Unity.UIWidgets.painting {
 
                 this._textScaleFactor = value;
                 this._layoutTemplate = null;
-                this._needsLayout = true;
-                Paragraph.release(ref this._paragraph);
+                this.markNeedsLayout();
             }
         }
 
@@ -68,12 +111,11 @@ namespace Unity.UIWidgets.painting {
                 }
 
                 this._ellipsis = value;
-                Paragraph.release(ref this._paragraph);
-                this._needsLayout = true;
+                this.markNeedsLayout();
             }
         }
 
-        public TextSpan text {
+        public InlineSpan text {
             get { return this._text; }
             set {
                 if ((this._text == null && value == null) || (this._text != null && this.text.Equals(value))) {
@@ -85,8 +127,7 @@ namespace Unity.UIWidgets.painting {
                 }
 
                 this._text = value;
-                Paragraph.release(ref this._paragraph);
-                this._needsLayout = true;
+                this.markNeedsLayout();
             }
         }
 
@@ -105,9 +146,8 @@ namespace Unity.UIWidgets.painting {
                 }
 
                 this._textDirection = value;
-                Paragraph.release(ref this._paragraph);
+                this.markNeedsLayout();
                 this._layoutTemplate = null;
-                this._needsLayout = true;
             }
         }
 
@@ -119,8 +159,7 @@ namespace Unity.UIWidgets.painting {
                 }
 
                 this._textAlign = value;
-                Paragraph.release(ref this._paragraph);
-                this._needsLayout = true;
+                this.markNeedsLayout();
             }
         }
 
@@ -139,8 +178,7 @@ namespace Unity.UIWidgets.painting {
                 }
 
                 this._maxLines = value;
-                Paragraph.release(ref this._paragraph);
-                this._needsLayout = true;
+                this.markNeedsLayout();
             }
         }
 
@@ -158,6 +196,65 @@ namespace Unity.UIWidgets.painting {
         }
 
         StrutStyle _strutStyle;
+
+        TextWidthBasis textWidthBasis {
+            get { return this._textWidthBasis; }
+            set {
+                D.assert(value != null);
+                if (this._textWidthBasis == value)
+                    return;
+                this._textWidthBasis = value;
+                this.markNeedsLayout();
+            }
+        }
+
+        TextWidthBasis _textWidthBasis;
+
+        ui.TextHeightBehavior textHeightBehavior {
+            get { return this._textHeightBehavior; }
+            set {
+                if (this._textHeightBehavior == value)
+                    return;
+                this._textHeightBehavior = value;
+                this.markNeedsLayout();
+            }
+        }
+
+        ui.TextHeightBehavior _textHeightBehavior;
+
+        List<TextBox> inlinePlaceholderBoxes {
+            get { return this._inlinePlaceholderBoxes; }
+        }
+
+        List<TextBox> _inlinePlaceholderBoxes;
+
+        List<float> inlinePlaceholderScales {
+            get { return this._inlinePlaceholderScales; }
+        }
+
+        List<float> _inlinePlaceholderScales;
+
+        void setPlaceholderDimensions(List<PlaceholderDimensions> value) {
+            if (value == null || value.isEmpty() || Enumerable.SequenceEqual(value, this._placeholderDimensions)) {
+                return;
+            }
+
+            D.assert(() => {
+                int placeholderCount = 0;
+                this.text.visitChildren((InlineSpan span) => {
+                    if (span is PlaceholderSpan) {
+                        placeholderCount += 1;
+                    }
+
+                    return true;
+                });
+                return placeholderCount == value.Count;
+            });
+            this._placeholderDimensions = value;
+            this.markNeedsLayout();
+        }
+
+        List<PlaceholderDimensions> _placeholderDimensions;
 
         public float minIntrinsicWidth {
             get {
@@ -183,6 +280,8 @@ namespace Unity.UIWidgets.painting {
         public float width {
             get {
                 Debug.Assert(!this._needsLayout);
+                // TODO: paragragh does not have longestLine
+                // return this.textWidthBasis == TextWidthBasis.longestLine ? this._paragraph.longestLine : this._paragraph.width;
                 return this._applyFloatingPointHack(this._paragraph.width);
             }
         }
@@ -211,7 +310,9 @@ namespace Unity.UIWidgets.painting {
             this._needsLayout = false;
             if (this._paragraph == null) {
                 var builder = new ParagraphBuilder(this._createParagraphStyle());
-                this._text.build(builder, this.textScaleFactor);
+                this._text.build(builder, textScaleFactor: this.textScaleFactor,
+                    dimensions: this._placeholderDimensions);
+                this._inlinePlaceholderScales = builder.placeholderScales;
                 this._paragraph = builder.build();
             }
 
@@ -225,6 +326,9 @@ namespace Unity.UIWidgets.painting {
                     this._paragraph.layout(new ParagraphConstraints(newWidth));
                 }
             }
+
+            // TODO: Paragraph_getRectsForPlaceholders
+            // this._inlinePlaceholderBoxes = this._paragraph.getBoxesForPlaceholders();
         }
 
         public void paint(Canvas canvas, Offset offset) {
@@ -271,7 +375,7 @@ namespace Unity.UIWidgets.painting {
             this._caretMetrics = new _CaretMetrics(
                 offset: rect != null ? new Offset(rect.left, rect.top) : this._emptyOffset,
                 fullHeight: rect != null ? (float?) (rect.bottom - rect.top) : null);
-            
+
             // Cache the caret position. This was forgot in flutter until https://github.com/flutter/flutter/pull/38821
             this._previousCaretPosition = position;
             this._previousCaretPrototype = caretPrototype;
@@ -286,7 +390,11 @@ namespace Unity.UIWidgets.painting {
             return this.getLineRange(this.getLineIndex(textPosition));
         }
 
-        public List<TextBox> getBoxesForSelection(TextSelection selection) {
+        public List<TextBox> getBoxesForSelection(
+            TextSelection selection,
+            ui.BoxHeightStyle boxHeightStyle = ui.BoxHeightStyle.tight,
+            ui.BoxWidthStyle boxWidthStyle = ui.BoxWidthStyle.tight) {
+            // TODO: boxheightstyle boxwidthstyle
             D.assert(!this._needsLayout);
             var results = this._paragraph.getRectsForRange(selection.start, selection.end);
             return results;
@@ -367,13 +475,14 @@ namespace Unity.UIWidgets.painting {
                     textAlign: this.textAlign,
                     textDirection: this.textDirection ?? defaultTextDirection,
                     maxLines: this.maxLines,
+                    textHeightBehavior: this._textHeightBehavior,
                     ellipsis: this.ellipsis,
                     strutStyle: this._strutStyle
                 );
             }
 
             return this._text.style.getParagraphStyle(this.textAlign, this.textDirection ?? defaultTextDirection,
-                this.ellipsis, this.maxLines, this.textScaleFactor);
+                this.ellipsis, this.maxLines, textScaleFactor: this.textScaleFactor);
         }
 
         public float preferredLineHeight {
@@ -401,17 +510,18 @@ namespace Unity.UIWidgets.painting {
         const int _zwjUtf16 = 0x200d;
 
         Rect _getRectFromUpstream(int offset, Rect caretPrototype) {
-            string flattenedText = this._text.toPlainText();
+            string flattenedText = this._text.toPlainText(includePlaceholders: false);
             var prevCodeUnit = this._text.codeUnitAt(Mathf.Max(0, offset - 1));
             if (prevCodeUnit == null) {
                 return null;
             }
 
-            bool needsSearch = _isUtf16Surrogate(prevCodeUnit.Value) || this._text.codeUnitAt(offset) == _zwjUtf16;
+            bool needsSearch = _isUtf16Surrogate(prevCodeUnit.Value) || this._text.codeUnitAt(offset) == _zwjUtf16 || this._isUnicodeDirectionality(prevCodeUnit);
             int graphemeClusterLength = needsSearch ? 2 : 1;
             List<TextBox> boxes = null;
             while ((boxes == null || boxes.isEmpty()) && flattenedText != null) {
                 int prevRuneOffset = offset - graphemeClusterLength;
+                // TODO: boxHeightStyle
                 boxes = this._paragraph.getRectsForRange(prevRuneOffset, offset);
                 if (boxes.isEmpty()) {
                     if (!needsSearch) {
@@ -435,15 +545,15 @@ namespace Unity.UIWidgets.painting {
 
                 float caretEnd = box.end;
                 float dx = box.direction == TextDirection.rtl ? caretEnd - caretPrototype.width : caretEnd;
-                return Rect.fromLTRB(Mathf.Min(dx, this.width), box.top,
-                    Mathf.Min(dx, this.width), box.bottom);
+                return Rect.fromLTRB(Mathf.Min(dx, this._paragraph.width), box.top,
+                    Mathf.Min(dx, this._paragraph.width), box.bottom);
             }
 
             return null;
         }
 
         Rect _getRectFromDownStream(int offset, Rect caretPrototype) {
-            string flattenedText = this._text.toPlainText();
+            string flattenedText = this._text.toPlainText(includePlaceholders: false);
             var nextCodeUnit =
                 this._text.codeUnitAt(Mathf.Min(offset, flattenedText == null ? 0 : flattenedText.Length - 1));
             if (nextCodeUnit == null) {
@@ -455,6 +565,7 @@ namespace Unity.UIWidgets.painting {
             List<TextBox> boxes = null;
             while ((boxes == null || boxes.isEmpty()) && flattenedText != null) {
                 int nextRuneOffset = offset + graphemeClusterLength;
+                // TODO: boxHeightStyle
                 boxes = this._paragraph.getRectsForRange(offset, nextRuneOffset);
                 if (boxes.isEmpty()) {
                     if (!needsSearch) {
@@ -504,5 +615,11 @@ namespace Unity.UIWidgets.painting {
         static bool _isUtf16Surrogate(int value) {
             return (value & 0xF800) == 0xD800;
         }
+        
+        bool _isUnicodeDirectionality(int? value) {
+            return value == 0x200F || value == 0x200E;
+        }
+        
+        // TODO: getLineBoundary computeLineMetrics
     }
 }

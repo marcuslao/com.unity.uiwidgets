@@ -50,7 +50,7 @@ namespace UIWidgetsSample {
                                     text: new TextSpan(
                                         text: "Test <",
                                         style: new TextStyle(color: Colors.black),
-                                        children: new List<TextSpan>() {
+                                        children: new List<InlineSpan>() {
                                             new TextSpan(
                                                 text: "Hover Me",
                                                 style: new TextStyle(

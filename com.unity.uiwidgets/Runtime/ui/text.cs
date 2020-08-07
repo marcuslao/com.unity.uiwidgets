@@ -21,6 +21,9 @@ namespace Unity.UIWidgets.ui {
         justify,
     }
 
+    public class FontFeature {
+    }
+
     public class ParagraphConstraints : IEquatable<ParagraphConstraints> {
         public readonly float width;
 
@@ -73,6 +76,20 @@ namespace Unity.UIWidgets.ui {
         }
     }
 
+    public enum BoxHeightStyle {
+        tight,
+        max,
+        includeLineSpacingMiddle,
+        includeLineSpacingTop,
+        includeLineSpacingBottom,
+        strut,
+    }
+
+    public enum BoxWidthStyle {
+        tight,
+        max,
+    }
+
     class TextStyle : IEquatable<TextStyle> {
         public static readonly Color kDefaultColor = Color.fromARGB(255, 0, 0, 0);
         public const float kDefaultFontSize = 14.0f;
@@ -97,10 +114,13 @@ namespace Unity.UIWidgets.ui {
         public readonly TextDecoration decoration = kDefaultDecoration;
         public readonly Color decorationColor;
         public readonly TextDecorationStyle decorationStyle = kDefaultDecorationStyle;
+        public readonly float decorationThickness;
         public readonly string fontFamily = kDefaultFontFamily;
+        public readonly List<String> fontFamilyFallback;
         public readonly Paint foreground;
         public readonly Paint background;
         public readonly List<BoxShadow> shadows;
+        public readonly List<FontFeature> _fontFeatures;
 
         internal UnityEngine.Color UnityColor {
             get { return this.color.toColor(); }
@@ -241,11 +261,14 @@ namespace Unity.UIWidgets.ui {
             float? height = null,
             TextDecoration decoration = null,
             TextDecorationStyle? decorationStyle = null,
+            float? decorationThickness = 0,
+            List<String> fontFamilyFallback = null,
             Color decorationColor = null,
             string fontFamily = null,
             Paint foreground = null,
             Paint background = null,
-            List<BoxShadow> shadows = null
+            List<BoxShadow> shadows = null,
+            List<FontFeature> fontFeatures = null
         ) {
             this.color = color ?? this.color;
             this.fontSize = fontSize ?? this.fontSize;
@@ -258,11 +281,14 @@ namespace Unity.UIWidgets.ui {
             this.height = height ?? this.height;
             this.decoration = decoration ?? this.decoration;
             this.decorationStyle = decorationStyle ?? this.decorationStyle;
+            this.decorationThickness = decorationThickness ?? this.decorationThickness;
             this.decorationColor = decorationColor ?? this.decorationColor;
+            this.fontFamilyFallback = fontFamilyFallback ?? this.fontFamilyFallback;
             this.fontFamily = fontFamily ?? this.fontFamily;
             this.foreground = foreground ?? this.foreground;
             this.background = background ?? this.background;
             this.shadows = shadows ?? this.shadows;
+            this._fontFeatures = fontFeatures ?? this._fontFeatures;
         }
     }
 
@@ -275,6 +301,7 @@ namespace Unity.UIWidgets.ui {
             float? fontSize = null,
             string fontFamily = null,
             float? height = null, // todo  
+            TextHeightBehavior textHeightBehavior = null,
             string ellipsis = null,
             StrutStyle strutStyle = null) {
             this.textAlign = textAlign;
@@ -285,6 +312,7 @@ namespace Unity.UIWidgets.ui {
             this.fontSize = fontSize;
             this.fontFamily = fontFamily;
             this.height = height;
+            this.textHeightBehavior = textHeightBehavior;
             this.ellipsis = ellipsis;
             this.strutStyle = strutStyle;
         }
@@ -366,6 +394,7 @@ namespace Unity.UIWidgets.ui {
         public readonly float? fontSize;
         public readonly string fontFamily;
         public readonly float? height;
+        public readonly TextHeightBehavior textHeightBehavior;
         public readonly string ellipsis;
         public readonly StrutStyle strutStyle;
 
@@ -440,6 +469,57 @@ namespace Unity.UIWidgets.ui {
         }
     }
 
+    public class TextHeightBehavior {
+        public TextHeightBehavior(
+            bool applyHeightToFirstAscent = true,
+            bool applyHeightToLastDescent = true
+        ) {
+            this.applyHeightToFirstAscent = applyHeightToFirstAscent;
+            this.applyHeightToLastDescent = applyHeightToLastDescent;
+        }
+
+        public TextHeightBehavior fromEncoded(int encoded) {
+            var applyHeightToFirstAscent = (encoded & 0x1) == 0;
+            var applyHeightToLastDescent = (encoded & 0x2) == 0;
+            return new TextHeightBehavior(applyHeightToFirstAscent, applyHeightToLastDescent);
+        }
+
+
+        public readonly bool applyHeightToFirstAscent;
+
+        public readonly bool applyHeightToLastDescent;
+
+        public int encode() {
+            return (this.applyHeightToFirstAscent ? 0 : 1 << 0) | (this.applyHeightToLastDescent ? 0 : 1 << 1);
+        }
+
+        public static bool operator ==(TextHeightBehavior left, object right) {
+            if (ReferenceEquals(left, right))
+                return true;
+            return right is TextHeightBehavior
+                    other && other.applyHeightToFirstAscent == left.applyHeightToFirstAscent
+                          && other.applyHeightToLastDescent == left.applyHeightToLastDescent;
+        }
+
+        public static bool operator !=(TextHeightBehavior left, object right) {
+            return !(left == right);
+        }
+
+        public override int GetHashCode() {
+            int hashCode = this.applyHeightToFirstAscent.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.applyHeightToLastDescent.GetHashCode();
+            return hashCode;
+        }
+
+        public override String ToString() {
+            return
+                "TextHeightBehavior('\n" +
+                "'applyHeightToFirstAscent: $applyHeightToFirstAscent, '\n" +
+                "'applyHeightToLastDescent: $applyHeightToLastDescent'\n" +
+                "')";
+        }
+    }
+
     public enum TextDirection {
         rtl,
         ltr,
@@ -466,7 +546,7 @@ namespace Unity.UIWidgets.ui {
         public static readonly FontWeight w700 = new FontWeight(6); // Bold
         public static readonly FontWeight w800 = new FontWeight(7); // Heavy
         public static readonly FontWeight w900 = new FontWeight(8); // Black
-        
+
         public static readonly FontWeight normal = w400;
 
         public static readonly FontWeight bold = w700;
@@ -668,5 +748,14 @@ namespace Unity.UIWidgets.ui {
         public static bool operator !=(TextBox left, TextBox right) {
             return !Equals(left, right);
         }
+    }
+
+    public enum PlaceholderAlignment {
+        baseline,
+        aboveBaseline,
+        belowBaseline,
+        top,
+        bottom,
+        middle,
     }
 }

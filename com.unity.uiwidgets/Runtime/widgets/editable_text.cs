@@ -969,7 +969,7 @@ namespace Unity.UIWidgets.widgets {
 
                 return new TextSpan(
                     style: this.widget.style,
-                    children: new List<TextSpan> {
+                    children: new List<InlineSpan> {
                         new TextSpan(text: this._value.composing.textBefore(this._value.text)),
                         new TextSpan(
                             style: composingStyle,

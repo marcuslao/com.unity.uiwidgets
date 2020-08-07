@@ -34,7 +34,7 @@ namespace Unity.UIWidgets.painting {
 
             int index = stops.FindLastIndex((float s) => { return s <= t; });
             D.assert(index != -1);
-            return Color.lerp(colors[index], colors[index + 1], 
+            return Color.lerp(colors[index], colors[index + 1],
                 (t - stops[index]) / (stops[index + 1] - stops[index]));
         }
 
@@ -62,18 +62,49 @@ namespace Unity.UIWidgets.painting {
         }
     }
 
+    public abstract class GradientTransform {
+        public GradientTransform() {
+        }
+
+        public abstract Matrix4 transform(Rect bounds, TextDirection textDirection);
+    }
+
+    class GradientRotation : GradientTransform {
+        public GradientRotation(float radians) : base() {
+            this.radians = radians;
+        }
+
+        public readonly float radians;
+
+        public override Matrix4 transform(Rect bounds, TextDirection textDirection) {
+            D.assert(bounds != null);
+            float sinRadians = Mathf.Sin(this.radians);
+            float oneMinusCosRadians = 1.0f - Mathf.Cos(this.radians);
+            Offset center = bounds.center;
+            float originX = sinRadians * center.dy + oneMinusCosRadians * center.dx;
+            float originY = -sinRadians * center.dx + oneMinusCosRadians * center.dy;
+            var transform = new Matrix4().identity();
+            transform.translate(originX, originY);
+            transform.rotateZ(this.radians);
+            return transform;
+        }
+    }
 
     public abstract class Gradient {
         public Gradient(
             List<Color> colors = null,
-            List<float> stops = null
+            List<float> stops = null,
+            GradientTransform transform = null
         ) {
             D.assert(colors != null);
             this.colors = colors;
             this.stops = stops;
+            this.transform = transform;
         }
 
         public readonly List<Color> colors;
+
+        public readonly GradientTransform transform;
 
         public readonly List<float> stops;
 
@@ -88,7 +119,7 @@ namespace Unity.UIWidgets.painting {
             return Enumerable.Range(0, this.colors.Count).Select(i => i * separation).ToList();
         }
 
-        public abstract PaintShader createShader(Rect rect);
+        public abstract PaintShader createShader(Rect rect, TextDirection textDirection);
 
         public abstract Gradient scale(float factor);
 
@@ -130,6 +161,10 @@ namespace Unity.UIWidgets.painting {
             D.assert(a != null && b != null);
             return t < 0.5 ? a.scale(1.0f - (t * 2.0f)) : b.scale((t - 0.5f) * 2.0f);
         }
+
+        public Matrix4 _resolveTransform(Rect bounds, TextDirection textDirection) {
+            return this.transform?.transform(bounds, textDirection: textDirection);
+        }
     }
 
 
@@ -139,8 +174,9 @@ namespace Unity.UIWidgets.painting {
             Alignment end = null,
             List<Color> colors = null,
             List<float> stops = null,
-            TileMode tileMode = TileMode.clamp
-        ) : base(colors: colors, stops: stops) {
+            TileMode tileMode = TileMode.clamp,
+            GradientTransform transform = null
+        ) : base(colors: colors, stops: stops, transform: transform) {
             this.begin = begin ?? Alignment.centerLeft;
             this.end = end ?? Alignment.centerRight;
             this.tileMode = tileMode;
@@ -152,12 +188,18 @@ namespace Unity.UIWidgets.painting {
 
         public readonly TileMode tileMode;
 
-        public override PaintShader createShader(Rect rect) {
+        public override PaintShader createShader(Rect rect, TextDirection textDirection = TextDirection.ltr) {
+            Matrix4 transform =  this._resolveTransform(rect, textDirection);
+            uiMatrix3? uiTransform = null;
+            if (transform != null) {
+                uiTransform = uiMatrix3.fromMatrix3(transform.toMatrix3());
+            }
             return ui.Gradient.linear(
                 this.begin.withinRect(rect),
                 this.end.withinRect(rect),
                 this.colors, this._impliedStops(),
-                this.tileMode
+                this.tileMode,
+                uiTransform
             );
         }
 
@@ -279,8 +321,9 @@ namespace Unity.UIWidgets.painting {
             float radius = 0.5f,
             List<Color> colors = null,
             List<float> stops = null,
-            TileMode tileMode = TileMode.clamp
-        ) : base(colors: colors, stops: stops) {
+            TileMode tileMode = TileMode.clamp,
+            GradientTransform transform = null
+        ) : base(colors: colors, stops: stops, transform: transform) {
             this.center = center ?? Alignment.center;
             this.radius = radius;
             this.tileMode = tileMode;
@@ -293,12 +336,13 @@ namespace Unity.UIWidgets.painting {
         public readonly TileMode tileMode;
 
 
-        public override PaintShader createShader(Rect rect) {
+        public override PaintShader createShader(Rect rect, TextDirection textDirection) {
             return ui.Gradient.radial(
                 this.center.withinRect(rect),
                 this.radius * rect.shortestSide,
                 this.colors, this._impliedStops(),
-                this.tileMode
+                this.tileMode,
+                uiMatrix3.fromMatrix3(this._resolveTransform(rect, textDirection).toMatrix3())
             );
         }
 
@@ -421,8 +465,9 @@ namespace Unity.UIWidgets.painting {
             float endAngle = Mathf.PI * 2,
             List<Color> colors = null,
             List<float> stops = null,
-            TileMode tileMode = TileMode.clamp
-        ) : base(colors: colors, stops: stops) {
+            TileMode tileMode = TileMode.clamp,
+            GradientTransform transform = null
+        ) : base(colors: colors, stops: stops, transform: transform) {
             this.center = center ?? Alignment.center;
             this.startAngle = startAngle;
             this.endAngle = endAngle;
@@ -438,12 +483,13 @@ namespace Unity.UIWidgets.painting {
         public readonly TileMode tileMode;
 
 
-        public override PaintShader createShader(Rect rect) {
+        public override PaintShader createShader(Rect rect, TextDirection textDirection) {
             return ui.Gradient.sweep(
                 this.center.withinRect(rect),
                 this.colors, this._impliedStops(),
                 this.tileMode,
-                this.startAngle, this.endAngle
+                this.startAngle, this.endAngle,
+                uiMatrix3.fromMatrix3(this._resolveTransform(rect, textDirection).toMatrix3())
             );
         }
 

@@ -100,7 +100,7 @@ namespace UIWidgetsGallery.gallery {
             this._scanner = new StringScanner(this._src);
 
             if (this._generateSpans()) {
-                List<TextSpan> formattedText = new List<TextSpan> { };
+                List<InlineSpan> formattedText = new List<InlineSpan> { };
                 int currentPosition = 0;
 
                 foreach (_HighlightSpan span in this._spans) {

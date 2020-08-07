@@ -8,27 +8,28 @@ using Unity.UIWidgets.ui;
 using UnityEngine.Assertions;
 
 namespace Unity.UIWidgets.painting {
-    public class TextSpan : DiagnosticableTree, IEquatable<TextSpan> {
+    public class TextSpan : InlineSpan, IEquatable<TextSpan> {
         public delegate bool Visitor(TextSpan span);
 
         public readonly TextStyle style;
         public readonly string text;
         public List<string> splitedText;
-        public readonly List<TextSpan> children;
+        public readonly List<InlineSpan> children;
         public readonly GestureRecognizer recognizer;
-        public readonly HoverRecognizer hoverRecognizer;
+        public readonly String semanticsLabel;
 
-        public TextSpan(string text = "", TextStyle style = null, List<TextSpan> children = null,
-            GestureRecognizer recognizer = null, HoverRecognizer hoverRecognizer = null) {
+        public TextSpan(string text = "", TextStyle style = null, List<InlineSpan> children = null,
+            GestureRecognizer recognizer = null, HoverRecognizer hoverRecognizer = null) : base(style: style,
+            hoverRecognizer: hoverRecognizer) {
             this.text = text;
             this.splitedText = !string.IsNullOrEmpty(text) ? EmojiUtils.splitByEmoji(text) : null;
             this.style = style;
             this.children = children;
             this.recognizer = recognizer;
-            this.hoverRecognizer = hoverRecognizer;
         }
 
-        public void build(ParagraphBuilder builder, float textScaleFactor = 1.0f) {
+        public override void build(ui.ParagraphBuilder builder, List<PlaceholderDimensions> dimensions,
+            float textScaleFactor = 1.0f) {
             var hasStyle = this.style != null;
 
             if (hasStyle) {
@@ -54,7 +55,7 @@ namespace Unity.UIWidgets.painting {
             if (this.children != null) {
                 foreach (var child in this.children) {
                     Assert.IsNotNull(child);
-                    child.build(builder, textScaleFactor);
+                    child.build(builder, dimensions, textScaleFactor);
                 }
             }
 
@@ -63,31 +64,15 @@ namespace Unity.UIWidgets.painting {
             }
         }
 
-        public bool hasHoverRecognizer {
-            get {
-                bool need = false;
-                this.visitTextSpan((text) => {
-                    if (text.hoverRecognizer != null) {
-                        need = true;
-                        return false;
-                    }
-
-                    return true;
-                });
-                return need;
-            }
-        }
-
-        bool visitTextSpan(Visitor visitor) {
-            if (!string.IsNullOrEmpty(this.text)) {
-                if (!visitor.Invoke(this)) {
+        public override bool visitChildren(InlineSpanVisitor visitor) {
+            if (this.text != null) {
+                if (!visitor.Invoke(this))
                     return false;
-                }
             }
 
             if (this.children != null) {
-                foreach (var child in this.children) {
-                    if (!child.visitTextSpan(visitor)) {
+                foreach (InlineSpan child in this.children) {
+                    if (!child.visitChildren(visitor)) {
                         return false;
                     }
                 }
@@ -96,84 +81,98 @@ namespace Unity.UIWidgets.painting {
             return true;
         }
 
-        public TextSpan getSpanForPosition(TextPosition position) {
+
+        protected override InlineSpan getSpanForPositionVisitor(TextPosition position, Accumulator offset) {
             D.assert(this.debugAssertIsValid());
-            var offset = 0;
             var targetOffset = position.offset;
             var affinity = position.affinity;
-            TextSpan result = null;
-            this.visitTextSpan((span) => {
-                var endOffset = offset + span.text.Length;
-                if ((targetOffset == offset && affinity == TextAffinity.downstream) ||
-                    (targetOffset > offset && targetOffset < endOffset) ||
-                    (targetOffset == endOffset && affinity == TextAffinity.upstream)) {
-                    result = span;
-                    return false;
+            int endOffset = offset.value + this.text.Length;
+            if (offset.value == targetOffset && affinity == TextAffinity.downstream ||
+                offset.value < targetOffset && targetOffset < endOffset ||
+                endOffset == targetOffset && affinity == TextAffinity.upstream) {
+                return this;
+            }
+
+            offset.increment(this.text.Length);
+            return null;
+        }
+
+        protected internal override void computeToPlainText(
+            StringBuilder buffer,
+            bool includeSemanticsLabels = true,
+            bool includePlaceholders = true) {
+            D.assert(this.debugAssertIsValid());
+            if (this.semanticsLabel != null && includeSemanticsLabels) {
+                buffer.Append(this.semanticsLabel);
+            }
+            else if (this.text != null) {
+                buffer.Append(this.text);
+            }
+
+            if (this.children != null) {
+                foreach (InlineSpan child in this.children) {
+                    child.computeToPlainText(buffer,
+                        includeSemanticsLabels: includeSemanticsLabels,
+                        includePlaceholders: includePlaceholders
+                    );
                 }
-
-                offset = endOffset;
-                return true;
-            });
-            return result;
+            }
         }
 
-        public string toPlainText() {
-            var sb = new StringBuilder();
-            this.visitTextSpan((span) => {
-                sb.Append(span.text);
-                return true;
-            });
-            return sb.ToString();
+        protected internal override void computeSemanticsInformation(List<InlineSpanSemanticsInformation> collector) {
+            D.assert(this.debugAssertIsValid());
+            if (this.text != null || this.semanticsLabel != null) {
+                collector.Add(new InlineSpanSemanticsInformation(
+                    this.text,
+                    semanticsLabel: this.semanticsLabel,
+                    recognizer: this.recognizer
+                ));
+            }
+
+            if (this.children != null) {
+                foreach (InlineSpan child in this.children) {
+                    child.computeSemanticsInformation(collector);
+                }
+            }
         }
 
-        public int? codeUnitAt(int index) {
-            if (index < 0) {
+        protected override int? codeUnitAtVisitor(int index, Accumulator offset) {
+            if (this.text == null) {
                 return null;
             }
 
-            var offset = 0;
-            int? result = null;
-            this.visitTextSpan(span => {
-                if (index - offset < span.text.Length) {
-                    result = span.text[index - offset];
-                    return false;
-                }
+            if (index - offset.value < this.text.Length) {
+                return this.text[index - offset.value];
+            }
 
-                offset += span.text.Length;
-                return true;
-            });
-            return result;
+            offset.increment(this.text.Length);
+            return null;
         }
 
         bool debugAssertIsValid() {
             D.assert(() => {
-                if (!this.visitTextSpan(span => {
-                    if (span.children != null) {
-                        foreach (TextSpan child in span.children) {
-                            if (child == null) {
-                                return false;
-                            }
-                        }
+                foreach (InlineSpan child in this.children) {
+                    if (child == null) {
+                        throw new UIWidgetsError(
+                            "A TextSpan object with a non-null child list should not have any nulls in its child list.\n" +
+                            "The full text in question was:\n" +
+                            this.toStringDeep(prefixLineOne: "  "));
                     }
 
-                    return true;
-                })) {
-                    throw new UIWidgetsError(
-                        "A TextSpan object with a non-null child list should not have any nulls in its child list.\n" +
-                        "The full text in question was:\n" +
-                        this.toStringDeep(prefixLineOne: "  "));
+                    D.assert(child.debugAssertIsValid());
                 }
 
                 return true;
             });
-            return true;
+            return base.debugAssertIsValid();
         }
 
-        public RenderComparison compareTo(TextSpan other) {
-            if (this.Equals(other)) {
+        public override RenderComparison compareTo(InlineSpan otherInline) {
+            if (this.Equals(otherInline)) {
                 return RenderComparison.identical;
             }
 
+            TextSpan other = otherInline as TextSpan;
             if (other.text != this.text
                 || ((this.children == null) != (other.children == null))
                 || (this.children != null && other.children != null && this.children.Count != other.children.Count)
@@ -237,8 +236,10 @@ namespace Unity.UIWidgets.painting {
             unchecked {
                 var hashCode = (this.style != null ? this.style.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (this.text != null ? this.text.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (this.splitedText != null ? this.splitedText.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (this.children != null ? this.children.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (this.recognizer != null ? this.recognizer.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (this.childHash());
+                hashCode = (hashCode * 397) ^ (this.semanticsLabel != null ? this.semanticsLabel.GetHashCode() : 0);
                 return hashCode;
             }
         }
@@ -254,6 +255,23 @@ namespace Unity.UIWidgets.painting {
 
             return Equals(this.style, other.style) && string.Equals(this.text, other.text) &&
                    childEquals(this.children, other.children) && this.recognizer == other.recognizer;
+        }
+
+        public bool Equals(InlineSpan otherSpan) {
+            if (ReferenceEquals(null, otherSpan)) {
+                return false;
+            }
+
+            if (ReferenceEquals(this, otherSpan)) {
+                return true;
+            }
+
+            if (otherSpan is TextSpan other) {
+                return this.Equals(other);
+            }
+            else {
+                return false;
+            }
         }
 
         public static bool operator ==(TextSpan left, TextSpan right) {
@@ -277,7 +295,7 @@ namespace Unity.UIWidgets.painting {
             }
         }
 
-        static bool childEquals(List<TextSpan> left, List<TextSpan> right) {
+        static bool childEquals(List<InlineSpan> left, List<InlineSpan> right) {
             if (ReferenceEquals(left, right)) {
                 return true;
             }

@@ -66,6 +66,10 @@ namespace Unity.UIWidgets.painting {
             );
         }
 
+        public override Path getClipPath(Rect rect, TextDirection textDirection) {
+            return this.shape.getOuterPath(rect);
+        }
+        
         public override EdgeInsets padding {
             get { return this.shape.dimensions; }
         }

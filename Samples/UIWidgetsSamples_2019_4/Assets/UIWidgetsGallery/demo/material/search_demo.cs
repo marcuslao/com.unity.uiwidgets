@@ -326,7 +326,7 @@ namespace UIWidgetsGallery.gallery {
                             text: new TextSpan(
                                 text: suggestion.Substring(0, this.query.Length),
                                 style: theme.textTheme.subhead.copyWith(fontWeight: FontWeight.bold),
-                                children: new List<TextSpan> {
+                                children: new List<InlineSpan> {
                                     new TextSpan(
                                         text: suggestion.Substring(this.query.Length),
                                         style: theme.textTheme.subhead

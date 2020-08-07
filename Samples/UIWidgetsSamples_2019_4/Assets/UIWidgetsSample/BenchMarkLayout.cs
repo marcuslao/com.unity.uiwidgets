@@ -51,7 +51,7 @@ namespace UIWidgetsSample {
         Widget richtext = new Container(
             child: new RichText(
                 text: new TextSpan("", children:
-                    new List<TextSpan>() {
+                    new List<InlineSpan>() {
                         new TextSpan("Real-time 3D revolutioni\t淡粉色的方式地方\tzes the animation pipeline "),
                         new TextSpan(style: new TextStyle(color: Color.fromARGB(255, 255, 0, 0)),
                             text: "for Disney Television Animation's\t “Baymax Dreams"),
