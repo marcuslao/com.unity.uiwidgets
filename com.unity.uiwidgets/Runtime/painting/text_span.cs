@@ -229,7 +229,12 @@ namespace Unity.UIWidgets.painting {
                 return false;
             }
 
-            return this.Equals((TextSpan) obj);
+            if (obj is TextSpan other) {
+                return this.Equals(other);
+            }
+            else {
+                return false;
+            }
         }
 
         public override int GetHashCode() {
@@ -255,23 +260,6 @@ namespace Unity.UIWidgets.painting {
 
             return Equals(this.style, other.style) && string.Equals(this.text, other.text) &&
                    childEquals(this.children, other.children) && this.recognizer == other.recognizer;
-        }
-
-        public bool Equals(InlineSpan otherSpan) {
-            if (ReferenceEquals(null, otherSpan)) {
-                return false;
-            }
-
-            if (ReferenceEquals(this, otherSpan)) {
-                return true;
-            }
-
-            if (otherSpan is TextSpan other) {
-                return this.Equals(other);
-            }
-            else {
-                return false;
-            }
         }
 
         public static bool operator ==(TextSpan left, TextSpan right) {

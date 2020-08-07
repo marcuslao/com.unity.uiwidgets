@@ -93,22 +93,6 @@ namespace Unity.UIWidgets.widgets {
             return result;
         }
 
-        public static bool operator ==(WidgetSpan current, object other) {
-            if (ReferenceEquals(current, other))
-                return true;
-            if (current == null) {
-                return false;
-            }
-            return other is WidgetSpan otherSpan
-                   && otherSpan.child.Equals(current.child)
-                   && otherSpan.alignment == current.alignment
-                   && otherSpan.baseline == current.baseline;
-        }
-
-        public static bool operator !=(WidgetSpan current, object other) {
-            return !(current == other);
-        }
-
         public override int GetHashCode() {
             int hashCode = base.GetHashCode();
             hashCode = (hashCode * 397) ^ (this.child.GetHashCode());

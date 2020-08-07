@@ -195,16 +195,7 @@ namespace Unity.UIWidgets.painting {
         public abstract RenderComparison compareTo(InlineSpan other);
 
         public static bool operator ==(InlineSpan current, Object other) {
-            if (ReferenceEquals(current, other)) {
-                return true;
-            }
-
-            if (other is InlineSpan otherSpan) {
-                return otherSpan.style == current.style;
-            }
-            else {
-                return false;
-            }
+            return Equals(current, other);
         }
 
         public static bool operator !=(InlineSpan current, object other) {
@@ -212,6 +203,9 @@ namespace Unity.UIWidgets.painting {
         }
 
         public override bool Equals(object other) {
+            if (ReferenceEquals(other, null)) {
+                return false;
+            }
             if (ReferenceEquals(this, other)) {
                 return true;
             }
