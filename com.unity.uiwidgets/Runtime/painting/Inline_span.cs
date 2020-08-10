@@ -33,7 +33,6 @@ namespace Unity.UIWidgets.painting {
             bool isPlaceholder = false
         ) {
             D.assert(text != null);
-            D.assert(isPlaceholder != null);
             D.assert(isPlaceholder == false || (text == "\uFFFC" && semanticsLabel == null && recognizer == null));
             this.text = text;
             this.semanticsLabel = semanticsLabel;
@@ -135,7 +134,7 @@ namespace Unity.UIWidgets.painting {
             }
         }
 
-        public TextStyle style;
+        public readonly TextStyle style;
 
         public abstract void build(ui.ParagraphBuilder builder, List<PlaceholderDimensions> dimensions = null,
             float textScaleFactor = 1.0f);
@@ -190,7 +189,7 @@ namespace Unity.UIWidgets.painting {
 
         protected abstract int? codeUnitAtVisitor(int index, Accumulator offset);
 
-        public bool debugAssertIsValid() => true;
+        public virtual bool debugAssertIsValid() => true;
 
         public abstract RenderComparison compareTo(InlineSpan other);
 
@@ -216,6 +215,14 @@ namespace Unity.UIWidgets.painting {
             return false;
         }
 
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((this.hoverRecognizer != null ? this.hoverRecognizer.GetHashCode() : 0) * 397) ^ (this.style != null ? this.style.GetHashCode() : 0);
+            }
+        }
+        
         public override void debugFillProperties(DiagnosticPropertiesBuilder properties) {
             base.debugFillProperties(properties);
             properties.defaultDiagnosticsTreeStyle = DiagnosticsTreeStyle.whitespace;

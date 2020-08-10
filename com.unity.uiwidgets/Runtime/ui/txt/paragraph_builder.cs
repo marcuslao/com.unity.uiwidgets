@@ -66,17 +66,13 @@ namespace Unity.UIWidgets.ui {
             float height,
             PlaceholderAlignment alignment,
             float? baselineOffset,
-            TextBaseline baseline,
+            TextBaseline? baseline,
             float? scale = 1.0f
         ) {
-            D.assert((alignment == PlaceholderAlignment.aboveBaseline ||
-                      alignment == PlaceholderAlignment.belowBaseline ||
-                      alignment == PlaceholderAlignment.baseline)
-                ? baseline != null
-                : true);
+            D.assert((alignment != PlaceholderAlignment.aboveBaseline && alignment != PlaceholderAlignment.belowBaseline && alignment != PlaceholderAlignment.baseline) || baseline != null);
             baselineOffset = baselineOffset ?? height;
             this._addPlaceholder(width * scale, height * scale, (int) alignment,
-                (baselineOffset == null ? height : baselineOffset) * scale, (int) baseline);
+                baselineOffset  * scale, (int)baseline);
             this._placeholderCount++;
             this._placeholderScales.Add(scale ?? 0);
         }

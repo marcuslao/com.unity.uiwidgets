@@ -16,7 +16,6 @@ namespace Unity.UIWidgets.painting {
             float baselineOffset
         ) {
             D.assert(size != null);
-            D.assert(alignment != null);
             this.size = size;
             this.alignment = alignment;
             this.baseline = baseline;
@@ -200,7 +199,6 @@ namespace Unity.UIWidgets.painting {
         TextWidthBasis textWidthBasis {
             get { return this._textWidthBasis; }
             set {
-                D.assert(value != null);
                 if (this._textWidthBasis == value)
                     return;
                 this._textWidthBasis = value;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Unity.UIWidgets.foundation;
 using Unity.UIWidgets.painting;
 
@@ -493,12 +494,16 @@ namespace Unity.UIWidgets.ui {
             return (this.applyHeightToFirstAscent ? 0 : 1 << 0) | (this.applyHeightToLastDescent ? 0 : 1 << 1);
         }
 
-        public static bool operator ==(TextHeightBehavior left, object right) {
-            if (ReferenceEquals(left, right))
+        public override bool Equals(object obj) {
+            if (ReferenceEquals(this, obj))
                 return true;
-            return right is TextHeightBehavior
-                    other && other.applyHeightToFirstAscent == left.applyHeightToFirstAscent
-                          && other.applyHeightToLastDescent == left.applyHeightToLastDescent;
+            return obj is TextHeightBehavior
+                    other && other.applyHeightToFirstAscent == this.applyHeightToFirstAscent
+                          && other.applyHeightToLastDescent == this.applyHeightToLastDescent;
+        }
+
+        public static bool operator ==(TextHeightBehavior left, object right) {
+            return Equals(left, right);
         }
 
         public static bool operator !=(TextHeightBehavior left, object right) {

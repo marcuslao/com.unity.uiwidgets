@@ -17,7 +17,7 @@ namespace Unity.UIWidgets.widgets {
             style: style
         ) {
             D.assert(child != null);
-            D.assert(baseline != null || !(
+            D.assert(!(
                 (alignment == ui.PlaceholderAlignment.aboveBaseline) ||
                 (alignment == ui.PlaceholderAlignment.belowBaseline) ||
                 (alignment == ui.PlaceholderAlignment.baseline)
@@ -31,7 +31,7 @@ namespace Unity.UIWidgets.widgets {
             ui.ParagraphBuilder builder,
             List<PlaceholderDimensions> dimensions,
             float textScaleFactor = 1.0f) {
-            D.assert(this.debugAssertIsValid());
+            D.assert(this.DebugAssertIsValid());
             D.assert(dimensions != null);
             bool hasStyle = this.style != null;
             if (hasStyle) {
@@ -101,7 +101,7 @@ namespace Unity.UIWidgets.widgets {
             return hashCode;
         }
 
-        public bool debugAssertIsValid() {
+        public bool DebugAssertIsValid() {
             return true;
         }
     }

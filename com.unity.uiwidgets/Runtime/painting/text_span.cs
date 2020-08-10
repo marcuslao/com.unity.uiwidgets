@@ -11,7 +11,6 @@ namespace Unity.UIWidgets.painting {
     public class TextSpan : InlineSpan, IEquatable<TextSpan> {
         public delegate bool Visitor(TextSpan span);
 
-        public readonly TextStyle style;
         public readonly string text;
         public List<string> splitedText;
         public readonly List<InlineSpan> children;
@@ -23,7 +22,6 @@ namespace Unity.UIWidgets.painting {
             hoverRecognizer: hoverRecognizer) {
             this.text = text;
             this.splitedText = !string.IsNullOrEmpty(text) ? EmojiUtils.splitByEmoji(text) : null;
-            this.style = style;
             this.children = children;
             this.recognizer = recognizer;
         }
@@ -149,7 +147,7 @@ namespace Unity.UIWidgets.painting {
             return null;
         }
 
-        bool debugAssertIsValid() {
+        public override bool debugAssertIsValid() {
             D.assert(() => {
                 foreach (InlineSpan child in this.children) {
                     if (child == null) {
