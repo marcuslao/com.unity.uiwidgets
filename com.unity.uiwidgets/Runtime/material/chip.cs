@@ -52,7 +52,7 @@ namespace Unity.UIWidgets.material {
         MaterialTapTargetSize? materialTapTargetSize { get; }
 
         float? elevation { get; }
-        
+
         Color shadowColor { get; }
     }
 
@@ -78,7 +78,7 @@ namespace Unity.UIWidgets.material {
         string tooltip { get; }
 
         ShapeBorder avatarBorder { get; }
-        
+
         Color selectedShadowColor { get; }
     }
 
@@ -455,7 +455,7 @@ namespace Unity.UIWidgets.material {
         }
 
         Color _selectedShadowColor;
-        
+
         public ShapeBorder avatarBorder {
             get { return this._avatarBorder; }
         }
@@ -912,7 +912,7 @@ namespace Unity.UIWidgets.material {
             D.assert(
                 onPressed != null,
                 () => "Rather than disabling an ActionChip by setting onPressed to null, " +
-                "remove it from the interface entirely."
+                      "remove it from the interface entirely."
             );
             D.assert(pressElevation == null || pressElevation >= 0.0f);
             D.assert(elevation == null || elevation >= 0.0f);
@@ -1253,7 +1253,7 @@ namespace Unity.UIWidgets.material {
         }
 
         Color _selectedShadowColor;
-        
+
         public ShapeBorder avatarBorder {
             get { return this._avatarBorder; }
         }
@@ -1341,11 +1341,11 @@ namespace Unity.UIWidgets.material {
             );
 
             float checkmarkPercentage = (float) (ChipUtils._kCheckmarkDuration.TotalMilliseconds /
-                                        ChipUtils._kSelectDuration.TotalMilliseconds);
+                                                 ChipUtils._kSelectDuration.TotalMilliseconds);
             float checkmarkReversePercentage = (float) (ChipUtils._kCheckmarkReverseDuration.TotalMilliseconds /
-                                               ChipUtils._kSelectDuration.TotalMilliseconds);
+                                                        ChipUtils._kSelectDuration.TotalMilliseconds);
             float avatarDrawerReversePercentage = (float) (ChipUtils._kReverseDrawerDuration.TotalMilliseconds /
-                                                  ChipUtils._kSelectDuration.TotalMilliseconds);
+                                                           ChipUtils._kSelectDuration.TotalMilliseconds);
             this.checkmarkAnimation = new CurvedAnimation(
                 parent: this.selectController,
                 curve: new Interval(1.0f - checkmarkPercentage, 1.0f, curve: Curves.fastOutSlowIn),
@@ -1518,7 +1518,8 @@ namespace Unity.UIWidgets.material {
             float elevation = this.widget.elevation ?? (chipTheme.elevation ?? _defaultElevation);
             float pressElevation = this.widget.pressElevation ?? (chipTheme.pressElevation ?? _defaultPressElevation);
             Color shadowColor = this.widget.shadowColor ?? chipTheme.shadowColor ?? _defaultShadowColor;
-            Color selectedShadowColor = this.widget.selectedShadowColor ?? chipTheme.selectedShadowColor ?? _defaultShadowColor;
+            Color selectedShadowColor =
+                this.widget.selectedShadowColor ?? chipTheme.selectedShadowColor ?? _defaultShadowColor;
             bool selected = this.widget.selected ?? false;
 
             Widget result = new Material(
@@ -1634,12 +1635,20 @@ namespace Unity.UIWidgets.material {
             additionalConstraints: additionalConstraints) {
         }
 
-        public override bool hitTest(HitTestResult result, Offset position = null) {
+        public override bool hitTest(BoxHitTestResult result, Offset position = null) {
             if (!this.size.contains(position)) {
                 return false;
             }
 
-            return this.child.hitTest(result, position: new Offset(position.dx, this.size.height / 2));
+            Offset offset = new Offset(position.dx, this.size.height / 2);
+            return result.addWithRawTransform(
+                transform: MatrixUtils.forceToPoint(offset),
+                position: position,
+                hitTest: (BoxHitTestResult resultIn, Offset position) => {
+                    D.assert(position == offset);
+                    return this.child.hitTest(resultIn, position: offset);
+                }
+            );
         }
     }
 
@@ -2008,7 +2017,10 @@ namespace Unity.UIWidgets.material {
         }
 
         public bool isDrawingCheckmark {
-            get { return this.theme.showCheckmark == true && (!(this.checkmarkAnimation?.isDismissed ?? !this.value)) == true; }
+            get {
+                return this.theme.showCheckmark == true &&
+                       (!(this.checkmarkAnimation?.isDismissed ?? !this.value)) == true;
+            }
         }
 
         public bool deleteIconShowing {
@@ -2188,7 +2200,7 @@ namespace Unity.UIWidgets.material {
             return new Size(deleteIconWidth, deleteIconHeight);
         }
 
-        public override bool hitTest(HitTestResult result, Offset position = null) {
+        public override bool hitTest(BoxHitTestResult result, Offset position = null) {
             if (!this.size.contains(position)) {
                 return false;
             }
@@ -2201,7 +2213,21 @@ namespace Unity.UIWidgets.material {
                 hitTestChild = this.label ?? this.avatar;
             }
 
-            return hitTestChild?.hitTest(result, position: hitTestChild.size.center(Offset.zero)) ?? false;
+            if (hitTestChild != null) {
+                Offset center = hitTestChild.size.center(Offset.zero);
+                return result.addWithRawTransform(
+                    transform: MatrixUtils.forceToPoint(center),
+                    position: position,
+                    hitTest: (BoxHitTestResult resultIn, Offset position) => {
+                        D.assert(position == center);
+                        return hitTestChild.hitTest(resultIn, position: center);
+                    }
+                );
+            }
+
+            return false;
+
+            // return hitTestChild?.hitTest(result, position: hitTestChild.size.center(Offset.zero)) ?? false;
         }
 
         protected override void performLayout() {
@@ -2284,10 +2310,10 @@ namespace Unity.UIWidgets.material {
             this.size = this.constraints.constrain(paddedSize);
             D.assert(this.size.height == this.constraints.constrainHeight(paddedSize.height),
                 () => $"Constrained height {this.size.height} doesn't match expected height " +
-                $"{this.constraints.constrainWidth(paddedSize.height)}");
+                      $"{this.constraints.constrainWidth(paddedSize.height)}");
             D.assert(this.size.width == this.constraints.constrainWidth(paddedSize.width),
                 () => $"Constrained width {this.size.width} doesn't match expected width " +
-                $"{this.constraints.constrainWidth(paddedSize.width)}");
+                      $"{this.constraints.constrainWidth(paddedSize.width)}");
         }
 
         static ColorTween selectionScrimTween = new ColorTween(

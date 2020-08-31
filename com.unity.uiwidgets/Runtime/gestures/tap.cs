@@ -59,6 +59,7 @@ namespace Unity.UIWidgets.gestures {
 
         bool _sentTapDown = false;
         bool _wonArenaForPrimaryPointer = false;
+        OffsetPair _finalPosition;
 
         PointerDownEvent _down;
         PointerUpEvent _up;
@@ -79,6 +80,8 @@ namespace Unity.UIWidgets.gestures {
         protected override void handlePrimaryPointer(PointerEvent evt) {
             if (evt is PointerUpEvent) {
                 this._up = (PointerUpEvent) evt;
+                this._finalPosition = new OffsetPair(global: evt.position, local: evt.localPosition);
+
                 this._checkUp();
             } else if (evt is PointerCancelEvent) {
                 this.resolve(GestureDisposition.rejected);
@@ -204,7 +207,8 @@ namespace Unity.UIWidgets.gestures {
             
             if (this.onTapDown != null) {
                 TapDownDetails details = new TapDownDetails(
-                    globalPosition: down.position,                
+                    globalPosition: down.position,       
+                    localPosition: down.localPosition,
                     kind: down.kind,
                     device: down.device
                 );

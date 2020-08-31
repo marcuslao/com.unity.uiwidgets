@@ -405,6 +405,12 @@ namespace Unity.UIWidgets.widgets {
         public static bool canUpdate(Widget oldWidget, Widget newWidget) {
             return oldWidget.GetType() == newWidget.GetType() && Equals(oldWidget.key, newWidget.key);
         }
+        
+        public static int _debugConcreteSubtype(Widget widget) {
+            return widget is StatefulWidget ? 1 :
+                widget is StatelessWidget ? 2 :
+                0;
+        }
     }
 
     public abstract class StatelessWidget : Widget {
@@ -799,21 +805,43 @@ namespace Unity.UIWidgets.widgets {
 
         InheritedWidget inheritFromElement(InheritedElement ancestor, object aspect = null);
 
+        InheritedWidget dependOnInheritedElement(InheritedElement ancestor, object aspect = null);
+
         InheritedWidget inheritFromWidgetOfExactType(Type targetType, object aspect = null);
+
+        public T dependOnInheritedWidgetOfExactType<T>(object aspect = null) where T: InheritedWidget;
 
         InheritedElement ancestorInheritedElementForWidgetOfExactType(Type targetType);
 
+        InheritedElement getElementForInheritedWidgetOfExactType<T>() where T : InheritedWidget;
+
         Widget ancestorWidgetOfExactType(Type targetType);
 
+        T findAncestorWidgetOfExactType<T>() where T: Widget;
+        
         State ancestorStateOfType(TypeMatcher matcher);
 
+        T findAncestorStateOfType<T>() where T: State;
+        
         State rootAncestorStateOfType(TypeMatcher matcher);
+        
+        T findRootAncestorStateOfType<T>() where T: State;
 
         RenderObject ancestorRenderObjectOfType(TypeMatcher matcher);
+
+        T findAncestorRenderObjectOfType<T>() where T: RenderObject;
 
         void visitAncestorElements(ElementVisitorBool visitor);
 
         void visitChildElements(ElementVisitor visitor);
+        
+        public DiagnosticsNode describeElement(String name, DiagnosticsTreeStyle style = DiagnosticsTreeStyle.errorProperty);
+
+        public DiagnosticsNode describeWidget(String name, DiagnosticsTreeStyle style = DiagnosticsTreeStyle.errorProperty);
+
+        public List<DiagnosticsNode> describeMissingAncestor(Type expectedAncestorType);
+
+        public DiagnosticsNode describeOwnershipChain(String name);
     }
 
     public class BuildOwner {
@@ -1228,6 +1256,12 @@ namespace Unity.UIWidgets.widgets {
             return 0;
         }
 
+        static int _debugConcreteSubtype(Element element) {
+            return element is StatefulElement ? 1 :
+                element is StatelessElement ? 2 :
+                0;
+        }
+
         internal Widget _widget;
 
         public Widget widget {
@@ -1273,6 +1307,62 @@ namespace Unity.UIWidgets.widgets {
             }
         }
 
+
+        public List<DiagnosticsNode> describeMissingAncestor(Type expectedAncestorType) {
+            List<DiagnosticsNode> information = new List<DiagnosticsNode>();
+            List<Element> ancestors = new List<Element>();
+            this.visitAncestorElements((Element element) => {
+                ancestors.Add(element);
+                return true;
+            });
+
+            information.Add(new DiagnosticsProperty<Element>(
+                "The specific widget that could not find a $expectedAncestorType ancestor was",
+                this,
+                style: DiagnosticsTreeStyle.errorProperty
+            ));
+
+            if (ancestors.isNotEmpty()) {
+                information.AddRange(describeElements("The ancestors of this widget were", ancestors));
+            }
+            else {
+                information.Add(this.describeElement(
+                    "This widget is the root of the tree, so it has no " +
+                    $"ancestors, let alone a \"{expectedAncestorType}\" ancestor."
+                ));
+            }
+
+            return information;
+        }
+
+        /// TODO: this is not updated
+        static IEnumerable<DiagnosticsNode> describeElements(String name, IEnumerable<Element> elements) {
+            return elements.Select((Element element) => new DiagnosticsProperty<Element>("", element));
+            // return new DiagnosticsBlock(
+            //     name: name,
+            //     children: elements.map<DiagnosticsNode>((Element element) => DiagnosticsProperty<Element>('', element)).toList(),
+            //     allowTruncate: true,
+            // );
+        }
+
+        public DiagnosticsNode describeElement(String name,
+            DiagnosticsTreeStyle style = DiagnosticsTreeStyle.errorProperty) {
+            return new DiagnosticsProperty<Element>(name, this, style: style);
+        }
+
+        public DiagnosticsNode describeWidget(String name,
+            DiagnosticsTreeStyle style = DiagnosticsTreeStyle.errorProperty) {
+            return new DiagnosticsProperty<Element>(name, this, style: style);
+        }
+
+
+        public DiagnosticsNode describeOwnershipChain(String name) {
+            // TODO(jacobr): make this structured so clients can support clicks on
+            // individual entries. For example, is this an iterable with arrows as
+            // separators?
+            return new StringProperty(name, this.debugGetCreatorChain(10));
+        }
+
         internal _ElementLifecycle _debugLifecycleState = _ElementLifecycle.initial;
 
         public virtual void visitChildren(ElementVisitor visitor) {
@@ -1301,15 +1391,6 @@ namespace Unity.UIWidgets.widgets {
         }
 
         protected virtual Element updateChild(Element child, Widget newWidget, object newSlot) {
-            D.assert(() => {
-                if (newWidget != null && newWidget.key is GlobalKey) {
-                    GlobalKey key = (GlobalKey) newWidget.key;
-                    key._debugReserveFor(this);
-                }
-
-                return true;
-            });
-
             if (newWidget == null) {
                 if (child != null) {
                     this.deactivateChild(child);
@@ -1318,16 +1399,25 @@ namespace Unity.UIWidgets.widgets {
                 return null;
             }
 
+            Element newChild;
+
             if (child != null) {
-                if (Equals(child.widget, newWidget)) {
+                bool hasSameSuperclass = true;
+                D.assert(() => {
+                    int oldElementClass = Element._debugConcreteSubtype(child);
+                    int newWidgetClass = Widget._debugConcreteSubtype(newWidget);
+                    hasSameSuperclass = oldElementClass == newWidgetClass;
+                    return true;
+                });
+
+                if (hasSameSuperclass && Equals(child.widget, newWidget)) {
                     if (!Equals(child.slot, newSlot)) {
                         this.updateSlotForChild(child, newSlot);
                     }
 
-                    return child;
+                    newChild = child;
                 }
-
-                if (Widget.canUpdate(child.widget, newWidget)) {
+                else if (hasSameSuperclass && Widget.canUpdate(child.widget, newWidget)) {
                     if (!Equals(child.slot, newSlot)) {
                         this.updateSlotForChild(child, newSlot);
                     }
@@ -1338,14 +1428,29 @@ namespace Unity.UIWidgets.widgets {
                         child.owner._debugElementWasRebuilt(child);
                         return true;
                     });
-                    return child;
+                    newChild = child;
                 }
-
-                this.deactivateChild(child);
-                D.assert(child._parent == null);
+                else {
+                    this.deactivateChild(child);
+                    D.assert(child._parent == null);
+                    newChild = this.inflateWidget(newWidget, newSlot);
+                }
+            }
+            else {
+                newChild = this.inflateWidget(newWidget, newSlot);
             }
 
-            return this.inflateWidget(newWidget, newSlot);
+            D.assert(() => {
+                if (newWidget != null && newWidget.key is GlobalKey) {
+                    GlobalKey key = (GlobalKey) newWidget.key;
+                    key._debugReserveFor(this);
+                }
+
+                return true;
+            });
+
+
+            return newChild;
         }
 
         public virtual void mount(Element parent, object newSlot) {
@@ -1364,9 +1469,9 @@ namespace Unity.UIWidgets.widgets {
                 this._owner = parent.owner;
             }
 
-            if (this.widget.key is GlobalKey) {
-                GlobalKey key = (GlobalKey) this.widget.key;
-                key._register(this);
+            Key key = this.widget.key;
+            if (key is GlobalKey globalKey) {
+                globalKey._register(this);
             }
 
             this._updateInheritance();
@@ -1771,12 +1876,16 @@ namespace Unity.UIWidgets.widgets {
             return true;
         }
 
-        public virtual InheritedWidget inheritFromElement(InheritedElement ancestor, object aspect = null) {
+        public virtual InheritedWidget dependOnInheritedElement(InheritedElement ancestor, object aspect = null) {
             D.assert(ancestor != null);
             this._dependencies = this._dependencies ?? new HashSet<InheritedElement>();
             this._dependencies.Add(ancestor);
             ancestor.updateDependencies(this, aspect);
             return ancestor.widget;
+        }
+
+        public InheritedWidget inheritFromElement(InheritedElement ancestor, object aspect = null) {
+            return this.dependOnInheritedElement(ancestor, aspect);
         }
 
         public virtual InheritedWidget inheritFromWidgetOfExactType(Type targetType, object aspect = null) {
@@ -1794,6 +1903,19 @@ namespace Unity.UIWidgets.widgets {
             return null;
         }
 
+        public T dependOnInheritedWidgetOfExactType<T>(object aspect) where T : InheritedWidget {
+            D.assert(this._debugCheckStateIsActiveForAncestorLookup());
+            InheritedElement ancestor = null;
+            var _ = this._inheritedWidgets?.TryGetValue(typeof(T), out ancestor);
+            if (ancestor != null) {
+                D.assert(ancestor is InheritedElement);
+                return this.dependOnInheritedElement(ancestor, aspect: aspect) as T;
+            }
+
+            this._hadUnsatisfiedDependencies = true;
+            return null;
+        }
+
         public virtual InheritedElement ancestorInheritedElementForWidgetOfExactType(Type targetType) {
             D.assert(this._debugCheckStateIsActiveForAncestorLookup());
             InheritedElement ancestor = null;
@@ -1801,6 +1923,12 @@ namespace Unity.UIWidgets.widgets {
                 this._inheritedWidgets.TryGetValue(targetType, out ancestor);
             }
 
+            return ancestor;
+        }
+
+        public InheritedElement getElementForInheritedWidgetOfExactType<T>() where T : InheritedWidget {
+            D.assert(this._debugCheckStateIsActiveForAncestorLookup());
+            InheritedElement ancestor = this._inheritedWidgets == null ? null : this._inheritedWidgets[typeof(T)];
             return ancestor;
         }
 
@@ -1819,6 +1947,14 @@ namespace Unity.UIWidgets.widgets {
             return ancestor == null ? null : ancestor.widget;
         }
 
+        public T findAncestorWidgetOfExactType<T>() where T : Widget {
+            D.assert(this._debugCheckStateIsActiveForAncestorLookup());
+            Element ancestor = this._parent;
+            while (ancestor != null && ancestor.widget.GetType() != typeof(T))
+                ancestor = ancestor._parent;
+            return ancestor?.widget as T;
+        }
+
         public virtual State ancestorStateOfType(TypeMatcher matcher) {
             D.assert(this._debugCheckStateIsActiveForAncestorLookup());
             Element ancestor = this._parent;
@@ -1833,6 +1969,19 @@ namespace Unity.UIWidgets.widgets {
 
             var statefulAncestor = ancestor as StatefulElement;
             return statefulAncestor == null ? null : statefulAncestor.state;
+        }
+
+        public T findAncestorStateOfType<T>() where T : State {
+            D.assert(this._debugCheckStateIsActiveForAncestorLookup());
+            Element ancestor = this._parent;
+            while (ancestor != null) {
+                if ((ancestor is StatefulElement stateAncestor) && stateAncestor.state is T)
+                    break;
+                ancestor = ancestor._parent;
+            }
+
+            StatefulElement statefulAncestor = ancestor as StatefulElement;
+            return statefulAncestor?.state as T;
         }
 
         public virtual State rootAncestorStateOfType(TypeMatcher matcher) {
@@ -1851,20 +2000,44 @@ namespace Unity.UIWidgets.widgets {
             return statefulAncestor == null ? null : statefulAncestor.state;
         }
 
+        public T findRootAncestorStateOfType<T>() where T : State {
+            D.assert(this._debugCheckStateIsActiveForAncestorLookup());
+            Element ancestor = this._parent;
+            StatefulElement statefulAncestor = null;
+            while (ancestor != null) {
+                if (ancestor is StatefulElement statefulElement && statefulElement.state is T)
+                    statefulAncestor = statefulElement;
+                ancestor = ancestor._parent;
+            }
+
+            return statefulAncestor?.state as T;
+        }
+
         public virtual RenderObject ancestorRenderObjectOfType(TypeMatcher matcher) {
             D.assert(this._debugCheckStateIsActiveForAncestorLookup());
             Element ancestor = this._parent;
             while (ancestor != null) {
                 var element = ancestor as RenderObjectElement;
                 if (element != null && matcher.check(ancestor.renderObject)) {
-                    break;
+                    return ancestor.renderObject;
                 }
 
                 ancestor = ancestor._parent;
             }
 
-            var renderObjectAncestor = ancestor as RenderObjectElement;
-            return renderObjectAncestor == null ? null : renderObjectAncestor.renderObject;
+            return null;
+        }
+
+        public T findAncestorRenderObjectOfType<T>() where T : RenderObject {
+            D.assert(this._debugCheckStateIsActiveForAncestorLookup());
+            Element ancestor = this._parent;
+            while (ancestor != null) {
+                if (ancestor is RenderObjectElement && ancestor.renderObject is T)
+                    return ancestor.renderObject as T;
+                ancestor = ancestor._parent;
+            }
+
+            return null;
         }
 
         public virtual void visitAncestorElements(ElementVisitorBool visitor) {
@@ -1950,7 +2123,8 @@ namespace Unity.UIWidgets.widgets {
             properties.add(new FlagProperty("dirty", value: this.dirty, ifTrue: "dirty"));
             if (this._dependencies != null && this._dependencies.isNotEmpty()) {
                 List<DiagnosticsNode> diagnosticsDependencies = this._dependencies
-                    .Select((InheritedElement element) => element.widget.toDiagnosticsNode(style: DiagnosticsTreeStyle.sparse))
+                    .Select((InheritedElement element) =>
+                        element.widget.toDiagnosticsNode(style: DiagnosticsTreeStyle.sparse))
                     .ToList();
                 properties.add(new DiagnosticsProperty<List<DiagnosticsNode>>("dependencies", diagnosticsDependencies));
             }
@@ -2310,7 +2484,7 @@ namespace Unity.UIWidgets.widgets {
             this._state = null;
         }
 
-        public override InheritedWidget inheritFromElement(InheritedElement ancestor, object aspect = null) {
+        public InheritedWidget inheritFromElement(InheritedElement ancestor, object aspect = null) {
             D.assert(ancestor != null);
             D.assert(() => {
                 Type targetType = ancestor.widget.GetType();

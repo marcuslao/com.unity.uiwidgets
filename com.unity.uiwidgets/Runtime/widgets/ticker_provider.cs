@@ -4,33 +4,64 @@ using Unity.UIWidgets.foundation;
 using Unity.UIWidgets.scheduler;
 
 namespace Unity.UIWidgets.widgets {
-    public class TickerMode : InheritedWidget {
+    public class TickerMode : StatelessWidget {
         public TickerMode(
             Key key = null,
             bool enabled = true,
             Widget child = null)
-            : base(key, child) {
+            : base(key) {
             this.enabled = enabled;
+            this.child = child;
         }
 
         public readonly bool enabled;
+        public readonly Widget child;
 
         public static bool of(BuildContext context) {
-            var widget = (TickerMode) context.inheritFromWidgetOfExactType(typeof(TickerMode));
+            var widget = context.dependOnInheritedWidgetOfExactType<_EffectiveTickerMode>();
             return widget != null ? widget.enabled : true;
         }
 
-        public override bool updateShouldNotify(InheritedWidget oldWidget) {
-            return this.enabled != ((TickerMode) oldWidget).enabled;
-        }
+        // public  bool updateShouldNotify(InheritedWidget oldWidget) {
+        //     return this.enabled != ((TickerMode) oldWidget).enabled;
+        // }
 
         public override void debugFillProperties(DiagnosticPropertiesBuilder properties) {
             base.debugFillProperties(properties);
             properties.add(new FlagProperty("mode", value: this.enabled, ifTrue: "enabled", ifFalse: "disabled",
                 showName: true));
         }
+
+        public override Widget build(BuildContext context) {
+            return new _EffectiveTickerMode(
+                enabled: this.enabled && TickerMode.of(context),
+                child: this.child
+            );
+        }
     }
 
+    class _EffectiveTickerMode : InheritedWidget {
+        public _EffectiveTickerMode(
+             bool enabled,
+            Widget child,
+            Key key= null
+        ) : base(key, child) {
+            D.assert(enabled != null);
+            this.enabled = enabled;
+        }
+
+        public readonly bool enabled;
+
+        public override bool updateShouldNotify(InheritedWidget oldWidget) {
+            return oldWidget is _EffectiveTickerMode effectiveTickerMode && this.enabled != effectiveTickerMode.enabled;
+        }
+
+        public void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+            base.debugFillProperties(properties);
+            properties.add(new FlagProperty("effective mode", value: this.enabled, ifTrue: "enabled", ifFalse: "disabled", showName: true));
+        }
+    }
+    
     public abstract class SingleTickerProviderStateMixin<T> : State<T>, TickerProvider where T : StatefulWidget {
         Ticker _ticker;
 

@@ -62,15 +62,15 @@ namespace Unity.UIWidgets.rendering {
             }
         }
 
-        protected override bool hitTestChildren(HitTestResult result, Offset position = null) {
+        protected  bool hitTestChildren(HitTestResult result, Offset position = null) {
             if (this.child != null) {
-                return this.child.hitTest(result, position);
+                return this.child.hitTest((BoxHitTestResult)result, position);
             }
 
             return false;
         }
 
-        public override void applyPaintTransform(RenderObject child, Matrix4 transform) {
+        public void applyPaintTransform(RenderObject child, Matrix3 transform) {
         }
 
         public override void paint(PaintingContext context, Offset offset) {

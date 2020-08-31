@@ -9,7 +9,7 @@ namespace Unity.UIWidgets.painting {
         public static float dot(this Vector3 left, Vector3 right) {
             return left.x * right.x + left.y * right.y + left.z * right.z;
         }
-        
+
         public static Offset getAsTranslation(this Matrix4 values) {
             if (values[0] == 1 && // col 1
                 values[1] == 0 &&
@@ -31,15 +31,15 @@ namespace Unity.UIWidgets.painting {
                 return null;
             }
         }
-        
+
         public static void QuaternionFromMatrix(this Matrix4 m, ref Quaternion q) {
-            q.w = Mathf.Sqrt( Mathf.Max( 0, 1 + m.entry(0,0) + m.entry(1,1) + m.entry(2,2) ) ) / 2; 
-            q.x = Mathf.Sqrt( Mathf.Max( 0, 1 + m.entry(0,0) - m.entry(1,1) - m.entry(2,2) ) ) / 2; 
-            q.y = Mathf.Sqrt( Mathf.Max( 0, 1 - m.entry(0,0) + m.entry(1,1) - m.entry(2,2) ) ) / 2; 
-            q.z = Mathf.Sqrt( Mathf.Max( 0, 1 - m.entry(0,0) - m.entry(1,1) + m.entry(2,2) ) ) / 2; 
-            q.x *= Mathf.Sign( q.x * ( m.entry(2,1) - m.entry(1,2) ) );
-            q.y *= Mathf.Sign( q.y * ( m.entry(0,2) - m.entry(2,0) ) );
-            q.z *= Mathf.Sign( q.z * ( m.entry(1,0) - m.entry(0,1) ) );
+            q.w = Mathf.Sqrt(Mathf.Max(0, 1 + m.entry(0, 0) + m.entry(1, 1) + m.entry(2, 2))) / 2;
+            q.x = Mathf.Sqrt(Mathf.Max(0, 1 + m.entry(0, 0) - m.entry(1, 1) - m.entry(2, 2))) / 2;
+            q.y = Mathf.Sqrt(Mathf.Max(0, 1 - m.entry(0, 0) + m.entry(1, 1) - m.entry(2, 2))) / 2;
+            q.z = Mathf.Sqrt(Mathf.Max(0, 1 - m.entry(0, 0) - m.entry(1, 1) + m.entry(2, 2))) / 2;
+            q.x *= Mathf.Sign(q.x * (m.entry(2, 1) - m.entry(1, 2)));
+            q.y *= Mathf.Sign(q.y * (m.entry(0, 2) - m.entry(2, 0)));
+            q.z *= Mathf.Sign(q.z * (m.entry(1, 0) - m.entry(0, 1)));
         }
 
         public static Quaternion scaled(this Quaternion lhs, float scale) {
@@ -49,7 +49,7 @@ namespace Unity.UIWidgets.painting {
             lhs.w *= scale;
             return lhs;
         }
-        
+
         public static Quaternion add(this Quaternion lhs, Quaternion rhs) {
             lhs.x += rhs.x;
             lhs.y += rhs.y;
@@ -109,7 +109,7 @@ namespace Unity.UIWidgets.painting {
                    && a[14] == 0.0
                    && a[15] == 1.0;
         }
-        
+
         public static Rect inverseTransformRect(Matrix4 transform, Rect rect) {
             D.assert(rect != null);
             D.assert(transform.determinant() != 0.0);
@@ -118,7 +118,7 @@ namespace Unity.UIWidgets.painting {
             transform = Matrix4.tryInvert(transform);
             return transformRect(transform, rect);
         }
-        
+
         static float _min4(float a, float b, float c, float d) {
             return Mathf.Min(a, Mathf.Min(b, Mathf.Min(c, d)));
         }
@@ -144,7 +144,7 @@ namespace Unity.UIWidgets.painting {
 
             return matrix;
         }
-        
+
         public static Matrix3 toMatrix3(this Matrix4 matrix4) {
             var matrix = Matrix3.I();
 
@@ -162,6 +162,13 @@ namespace Unity.UIWidgets.painting {
 
             return matrix;
         }
+
+        public static Matrix4 forceToPoint(Offset offset) {
+            var result = new Matrix4().identity();
+            result.setRow(0, new Vector4(0, 0, 0, offset.dx));
+            result.setRow(1, new Vector4(0, 0, 0, offset.dy));
+            return result;
+        }
     }
 
     public class TransformProperty : DiagnosticsProperty<Matrix4> {
@@ -170,7 +177,8 @@ namespace Unity.UIWidgets.painting {
             object defaultValue = null,
             DiagnosticLevel level = DiagnosticLevel.info
         ) : base(name, value, showName: showName, defaultValue: defaultValue ?? Diagnostics.kNoDefaultValue,
-            level: level) { }
+            level: level) {
+        }
 
         protected override string valueToString(TextTreeConfiguration parentConfiguration = null) {
             if (parentConfiguration != null && !parentConfiguration.lineBreakProperties) {
