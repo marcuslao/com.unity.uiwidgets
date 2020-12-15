@@ -24,8 +24,11 @@ enum PointerButtonStylus : int64_t {
   kPointerButtonStylusPrimary = 1 << 1,
   kPointerButtonStylusSecondary = 1 << 2,
 };
-
+#ifdef __ANDROID__
+struct alignas(8) PointerData {
+#else
 struct alignas(4) PointerData {
+#endif
   enum class Change : int64_t {
     kCancel,
     kAdd,

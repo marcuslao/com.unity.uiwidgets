@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __ANDROID__
+#include <stdarg.h>
+#endif
+
 #include "IUnityGraphics.h"
 #include "IUnityInterface.h"
 

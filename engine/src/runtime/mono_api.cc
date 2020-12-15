@@ -143,6 +143,8 @@ extern "C" void Dart_TimelineEvent(const char* label, int64_t timestamp0,
                                    const char** argument_values) {
   static int64_t timestamp_begin = timestamp0;
 
+#ifdef __ANDROID__
+#else
   if (timestamp1_or_async_id) {
     uiwidgets::UIWidgetsSystem::GetInstancePtr()->printf_console(
         "uiwidgets Timeline [Thread:%d] [%lld ms] [%lld] [%s]: %s\n",
@@ -154,4 +156,5 @@ extern "C" void Dart_TimelineEvent(const char* label, int64_t timestamp0,
         GetCurrentThreadId(), (timestamp0 - timestamp_begin) / 1000,
         TimelineEventToString(type), label);
   }
+#endif
 }

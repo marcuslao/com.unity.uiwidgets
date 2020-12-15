@@ -33,11 +33,15 @@ OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType) {
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API
 UnityPluginLoad(IUnityInterfaces* unityInterfaces) {
+#ifndef __ANDROID__
 	uiwidgets::UIWidgetsSystem::GetInstancePtr()->BindUnityInterfaces(unityInterfaces);
+#endif
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload() {
+#ifndef __ANDROID__
   uiwidgets::UIWidgetsSystem::GetInstancePtr()->UnBindUnityInterfaces();
+#endif
 }
 
 // --------------------------------------------------------------------------
