@@ -704,12 +704,17 @@ namespace Unity.UIWidgets.widgets {
             RenderListWheelViewport renderObject = this.renderObject;
             D.assert(renderObject.debugValidateChild(child));
             int slotNum = (int) slot;
-            if(slotNum >= 1)
-                renderObject.insert(child as RenderBox, after: _childElements.getOrDefault(slotNum - 1).renderObject as RenderBox);
+            if (slotNum >= 1) {
+                RenderBox result = null;
+                renderObject.insert(child as RenderBox, after:  _childElements.getOrDefault(slotNum - 1)?.renderObject as RenderBox);
+            }
+            else {
+                renderObject.insert(child as RenderBox, after: null);
+            }
             D.assert(renderObject == this.renderObject);
         }
 
-        protected override void moveChildRenderObject(RenderObject child, dynamic slot) { 
+        protected override void moveChildRenderObject(RenderObject child, object slot) { 
             string moveChildRenderObjectErrorMessage =
                 "Currently we maintain the list in contiguous increasing order, so " +
                 "moving children around is not allowed.";

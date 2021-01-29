@@ -441,14 +441,16 @@ namespace Unity.UIWidgets.cupertino {
         }
         DateTime  selectedDateTime {
             get {
-                return new DateTime(
+                var result =  new DateTime(
                     initialDateTime.Year,
                     initialDateTime.Month,
-                    initialDateTime.Day + selectedDayFromInitial,
+                    initialDateTime.Day,
                     selectedHour,
                     selectedMinute,
                     0
                 );
+                result.AddDays(selectedDayFromInitial);
+                return result;
             }
         }
         void _onSelectedItemChange(int index) {
