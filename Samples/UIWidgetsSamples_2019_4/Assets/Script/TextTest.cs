@@ -51,10 +51,44 @@ namespace UIWidgetsSample
             public override Widget build(BuildContext context)
             {
                 
-                //return new CupertinoNavigationDemo();
-                //return new CupertinoAlertDemo();
+                return new CupertinoNavigationDemo();
+               
                 //return new CupertinoPickerDemo();
-                return new CupertinoSwitchDemo();
+                return new CupertinoTabScaffold(
+                        tabBar: new CupertinoTabBar(
+                            items: new List<BottomNavigationBarItem>(){
+                            new BottomNavigationBarItem(
+                                icon: new Icon(CupertinoIcons.book_solid),
+                                title: new Text("articles")
+                            ),
+                            new BottomNavigationBarItem(
+                                icon: new Icon(CupertinoIcons.eye_solid),
+                                title: new Text("views")
+                            )
+                        }
+
+                    ),
+                    tabBuilder: (context1, i)=>{
+                        return new CupertinoTabView(
+                            builder: (context2)=>{
+                            return new CupertinoPageScaffold(
+                                navigationBar: new CupertinoNavigationBar(
+                                    middle:(i==0) ? new Text("articles") : new Text("views")
+                                ),
+                                child: new Center(
+                                    child: new Text($"this is tab #{i}",
+                                        style: CupertinoTheme.of(context)
+                                            .textTheme
+                                            .navActionTextStyle
+    
+                                    )
+                                )
+                            );
+                        }
+                        );
+                    }
+                    );
+                
             }
         }
 
