@@ -226,6 +226,8 @@ namespace Unity.UIWidgets.engine2 {
 
         protected void OnEnable() {
             base.OnEnable();
+            Hooks.hook();
+            
             D.assert(_renderTexture == null);
             _recreateRenderTexture(_currentWidth, _currentHeight, _currentDevicePixelRatio);
 

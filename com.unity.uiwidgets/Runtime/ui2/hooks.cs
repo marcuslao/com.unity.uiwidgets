@@ -9,12 +9,13 @@ using UnityEngine;
 
 namespace Unity.UIWidgets.ui {
     public static class Hooks {
-#if UNITY_EDITOR
-        [UnityEditor.InitializeOnLoadMethod]
-#else
-        [RuntimeInitializeOnLoadMethod]
-#endif
-        static unsafe void hook() {
+
+        public static bool runed = false;
+        public static unsafe void hook() {
+            if (runed) {
+                return;
+            }
+            runed = false;
             Mono_hook(
                 Mono_throwException,
                 Mono_shutdown);
