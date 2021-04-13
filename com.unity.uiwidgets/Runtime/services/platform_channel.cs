@@ -14,6 +14,8 @@ namespace Unity.UIWidgets.service {
             codec = new StandardMethodCodec();
             D.assert(name != null);
             D.assert(codec != null);
+            this.name = name;
+            this.codec = codec;
             _binaryMessenger = binaryMessenger;
         }
 
@@ -32,7 +34,7 @@ namespace Unity.UIWidgets.service {
                 handler == null ? null : (byte[] message) => _handleAsMethodCall(message, handler)
             );
         }*/
-        /*
+        
         public Future<T> _invokeMethod<T>(string method,  bool missingOk, object arguments )  {
             // async
             D.assert(method != null); 
@@ -48,13 +50,13 @@ namespace Unity.UIWidgets.service {
               }
               throw new MissingPluginException($"No implementation found for method $method on channel {name}");
             }
-            return (Future<T>)codec.decodeEnvelope(result);
+            return result.then_<T>(r => FutureOr.value(codec.decodeEnvelope(r)));
         }
         public Future _invokeMethod(string method,  bool missingOk, object arguments )  {
             // async
             D.assert(method != null); 
             // await
-            byte[] result =  binaryMessenger.send(
+            Future<byte[]> result =  binaryMessenger.send(
                 name,
                 codec.encodeMethodCall(new MethodCall(method, arguments))
             );
@@ -64,14 +66,15 @@ namespace Unity.UIWidgets.service {
                 }
                 throw new MissingPluginException($"No implementation found for method $method on channel {name}");
             }
-            return (Future)codec.decodeEnvelope(result);
+
+            return result.then_(r => codec.decodeEnvelope(r));
         }
         public virtual Future<T> invokeMethod<T>(string method,  object arguments  = null) {
             return _invokeMethod<T>(method, missingOk: false, arguments: arguments);
         }
         public virtual Future invokeMethod(string method,  object arguments  = null) {
             return _invokeMethod(method, missingOk: false, arguments: arguments);
-        }*/
+        }
         
     }
     /*public class OptionalMethodChannel : MethodChannel {

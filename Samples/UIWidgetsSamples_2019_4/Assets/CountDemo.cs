@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using uiwidgets;
 using Unity.UIWidgets.cupertino;
 using Unity.UIWidgets.engine2;
+using Unity.UIWidgets.service;
 using Unity.UIWidgets.ui;
 using Unity.UIWidgets.widgets;
 using Text = Unity.UIWidgets.widgets.Text;
@@ -58,6 +59,11 @@ namespace UIWidgetsSample
                         new CupertinoButton(
                             onPressed: () =>
                             {
+                                MethodChannel navigation = new MethodChannel(
+                                    "flutter/navigation",
+                                    new JSONMethodCodec()
+                                );
+                                navigation.invokeMethod("fxck", "xxx");
                                 setState(() =>
                                 {
                                     count++;
