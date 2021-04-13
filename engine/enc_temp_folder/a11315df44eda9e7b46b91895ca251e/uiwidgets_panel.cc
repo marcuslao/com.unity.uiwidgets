@@ -215,6 +215,13 @@ void UIWidgetsPanel::OnEnable(void* native_texture_ptr, size_t width,
   process_events_ = true;
 }
 
+
+
+void install() { 
+
+ hhk = SetWindowsHookEx(WH_KEYBOARD, wireKeyboardProc, NULL, NULL);
+}
+
 void UIWidgetsPanel::MonoEntrypoint() { entrypoint_callback_(handle_); }
 
 void UIWidgetsPanel::OnDisable() {
