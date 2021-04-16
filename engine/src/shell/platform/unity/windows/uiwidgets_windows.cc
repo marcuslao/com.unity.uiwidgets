@@ -304,7 +304,7 @@ void UIWidgetsDesktopMessengerSendResponse(
                                            data_length);
 }
 
-void UIWidgetsDesktopMessengerSetCallback(UIWidgetsDesktopMessengerRef messenger,
+UIWIDGETS_API(void) UIWidgetsDesktopMessengerSetCallback(UIWidgetsDesktopMessengerRef messenger,
                                         const char* channel,
                                         UIWidgetsDesktopMessageCallback callback,
                                         void* user_data) {

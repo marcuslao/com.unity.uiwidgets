@@ -13,6 +13,7 @@
 #include "shell/platform/embedder/embedder_engine.h"
 #include "uiwidgets_system.h"
 #include "unity_external_texture_gl.h"
+#include "shell/platform/unity/windows/window_state.h"
 
 namespace uiwidgets {
 
@@ -169,7 +170,10 @@ void UIWidgetsPanel::OnEnable(void* native_texture_ptr, size_t width,
 
   args.platform_message_callback =
       [](const UIWidgetsPlatformMessage* engine_message,
-         void* user_data) -> void {};
+         void* user_data) -> void {
+    auto* panel = static_cast<UIWidgetsPanel*>(user_data);
+    return panel->HandlePlatformMessage(engine_message);
+  };
 
   args.custom_task_runners = &custom_task_runners;
   args.task_observer_add = [](intptr_t key, void* callback,
@@ -208,6 +212,13 @@ void UIWidgetsPanel::OnEnable(void* native_texture_ptr, size_t width,
 
   engine_ = engine;
   UIWidgetsEngineRunInitialized(engine);
+
+  auto messenger = std::make_unique<UIWidgetsDesktopMessenger>();
+
+    message_dispatcher_ =
+      std::make_unique<uiwidgets::IncomingMessageDispatcher>(messenger.get());
+  messenger->engine = engine_;
+  messenger->dispatcher = message_dispatcher_.get();
 
   UIWidgetsSystem::GetInstancePtr()->RegisterPanel(this);
   hhk = SetWindowsHookEx(WH_KEYBOARD, wireKeyboardProc, NULL, NULL);
@@ -494,6 +505,34 @@ void UIWidgetsPanel::OnMouseLeave() {
     SendMouseLeave();
   }
 }
+
+static UIWidgetsDesktopMessage ConvertToDesktopMessage(
+    const UIWidgetsPlatformMessage& engine_message) {
+  UIWidgetsDesktopMessage message = {};
+  message.struct_size = sizeof(message);
+  message.channel = engine_message.channel;
+  message.message = engine_message.message;
+  message.message_size = engine_message.message_size;
+  message.response_handle = engine_message.response_handle;
+  return message;
+}
+
+void UIWidgetsPanel::HandlePlatformMessage(
+    const UIWidgetsPlatformMessage* engine_message) {
+  if (engine_message->struct_size != sizeof(UIWidgetsPlatformMessage)) {
+    std::cerr << "Invalid message size received. Expected: "
+              << sizeof(UIWidgetsPlatformMessage) << " but received "
+              << engine_message->struct_size << std::endl;
+    return;
+  }
+
+  auto message = ConvertToDesktopMessage(*engine_message);
+
+  message_dispatcher_->HandleMessage(
+      message, [this] { this->process_events_ = false; },
+      [this] { this->process_events_ = true; });
+}
+
 
 UIWIDGETS_API(UIWidgetsPanel*)
 UIWidgetsPanel_constructor(

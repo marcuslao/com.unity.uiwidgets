@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include "uiwidgets_export.h"
+#include "runtime/mono_api.h"
 
 typedef struct UIWidgetsDesktopMessenger* UIWidgetsDesktopMessengerRef;
 
@@ -46,7 +47,7 @@ void UIWidgetsDesktopMessengerSendResponse(
     const UIWidgetsDesktopMessageResponseHandle* handle, const uint8_t* data,
     size_t data_length);
 
-void UIWidgetsDesktopMessengerSetCallback(
+UIWIDGETS_API(void) UIWidgetsDesktopMessengerSetCallback(
     UIWidgetsDesktopMessengerRef messenger, const char* channel,
     UIWidgetsDesktopMessageCallback callback, void* user_data);
 

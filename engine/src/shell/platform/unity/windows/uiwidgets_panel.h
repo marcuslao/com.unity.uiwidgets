@@ -6,6 +6,7 @@
 #include "runtime/mono_api.h"
 #include "unity_surface_manager.h"
 #include "win32_task_runner.h"
+#include "shell/platform/common/cpp/incoming_message_dispatcher.h"
 
 namespace uiwidgets {
 
@@ -67,6 +68,8 @@ class UIWidgetsPanel : public fml::RefCountedThreadSafe<UIWidgetsPanel> {
 
   void OnMouseLeave();
 
+  void HandlePlatformMessage(const UIWidgetsPlatformMessage*);
+
   bool NeedUpdateByPlayerLoop();
 
   bool NeedUpdateByEditorLoop();
@@ -110,6 +113,9 @@ class UIWidgetsPanel : public fml::RefCountedThreadSafe<UIWidgetsPanel> {
   std::unique_ptr<GfxWorkerTaskRunner> gfx_worker_task_runner_;
   std::unique_ptr<Win32TaskRunner> task_runner_;
   UIWidgetsEngine engine_ = nullptr;
+
+ std::unique_ptr<uiwidgets::IncomingMessageDispatcher> message_dispatcher_;
+
 
   std::vector<intptr_t> vsync_batons_;
 
