@@ -181,16 +181,6 @@ void PointerDataPacketConverter::ConvertPointerData(
 
         UpdatePointerIdentifier(pointer_data, state, false);
 
-        if (LocationNeedsUpdate(pointer_data, state)) {
-          // Synthesizes a move event if the location does not match.
-          PointerData synthesized_move_event = pointer_data;
-          synthesized_move_event.change = PointerData::Change::kMove;
-          synthesized_move_event.synthesized = 1;
-
-          UpdateDeltaAndState(synthesized_move_event, state);
-          converted_pointers.push_back(synthesized_move_event);
-        }
-
         state.isDown = false;
         states_[pointer_data.device] = state;
         converted_pointers.push_back(pointer_data);
